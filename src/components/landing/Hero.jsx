@@ -14,22 +14,22 @@ export const Hero = () => {
             className="lg:pr-8 mb-12 lg:mb-0"
           >
             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6 text-gray-800" style={{ fontFamily: 'serif' }}>
-              Your Peace of Mind
+              Accessible, Affordable,
               <br />
-              with <span className="italic text-[#748DAE]">CareNest</span>
+              <span className="italic text-[#748DAE]">Personalized Therapy</span>
             </h1>
             <p className="text-lg text-gray-700 leading-relaxed mb-8 max-w-xl">
-              At CareNest, we provide personalized mental health counseling with licensed therapists focused on your unique needs.
+              Connect with qualified therapists and supervised psychology students. We make mental health support accessible to everyone with our low-fee model and personalized matching.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/register">
                 <button className="px-8 py-4 text-base font-medium text-white bg-[#748DAE] rounded-full hover:bg-[#748DAE]/90 transition-colors shadow-lg">
-                  Get Started
+                  Find Your Match
                 </button>
               </Link>
               <Link to="/therapists">
                 <button className="px-8 py-4 text-base font-medium text-[#748DAE] bg-white border-2 border-[#748DAE] rounded-full hover:bg-[#9ECAD6]/10 transition-colors">
-                  Find a Therapist
+                  View Therapists
                 </button>
               </Link>
             </div>

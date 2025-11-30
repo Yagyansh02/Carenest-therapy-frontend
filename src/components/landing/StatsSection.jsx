@@ -3,9 +3,9 @@ import { useInView } from 'react-intersection-observer';
 import { useEffect, useState } from 'react';
 
 const stats = [
-  { number: 12, suffix: '+', label: 'Years Experience' },
-  { number: 34, suffix: '+', label: 'Expert Therapists' },
-  { number: 5, suffix: 'K+', label: 'Happy Clients' },
+  { number: 12, suffix: '+', label: 'Supervised Students' },
+  { number: 34, suffix: '+', label: 'Affordable Sessions' },
+  { number: 5, suffix: 'K+', label: 'Lives Impacted' },
 ];
 
 export const StatsSection = () => {
@@ -43,9 +43,9 @@ export const StatsSection = () => {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold mb-4" style={{ fontFamily: 'serif' }}>
-            Our Holistic Healing Approach to
+            Breaking Financial Barriers
             <br />
-            Mental Well-Being
+            to Mental Health
           </h2>
         </div>
 

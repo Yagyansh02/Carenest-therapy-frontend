@@ -4,20 +4,20 @@ import { CheckCircle } from 'lucide-react';
 
 const benefits = [
   {
-    title: 'Personalized Treatment',
-    description: 'Tailored therapy plans designed specifically for your unique needs and goals.',
+    title: 'Affordable & Accessible',
+    description: 'High-quality sessions at lower fees through our student therapist program.',
   },
   {
-    title: 'Licensed Professionals',
-    description: 'Work with certified therapists who have years of experience and expertise.',
+    title: 'Supervised Excellence',
+    description: 'Every student therapist is guided by a licensed supervisor to ensure quality.',
   },
   {
-    title: 'Flexible Scheduling',
-    description: 'Book sessions at times that work best for your busy lifestyle.',
+    title: 'Personalized Matching',
+    description: 'Our assessment flow matches you with the right therapist for your needs.',
   },
   {
-    title: 'Confidential & Secure',
-    description: 'Your privacy is our top priority with HIPAA-compliant platforms.',
+    title: 'Fully Online Experience',
+    description: 'Book, pay, and attend video sessions from the comfort of your home.',
   },
 ];
 
@@ -47,7 +47,7 @@ export const BenefitsSection = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <h2 className="text-4xl lg:text-5xl font-bold mb-8 text-gray-800" style={{ fontFamily: 'serif' }}>
-              The Benefits of Choosing CareNest
+              Why CareNest Stands Out
             </h2>
             <div className="space-y-6">
               {benefits.map((benefit, index) => (

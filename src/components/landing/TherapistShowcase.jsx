@@ -4,26 +4,26 @@ import { Link } from 'react-router-dom';
 
 const therapists = [
   {
-    name: 'Dr. Sarah Johnson',
-    specialty: 'Clinical Psychologist',
+    name: 'Sarah Johnson',
+    specialty: 'Student Therapist',
     image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    experience: '12 years',
+    experience: 'Supervised',
   },
   {
     name: 'Dr. Michael Chen',
-    specialty: 'Marriage Counselor',
+    specialty: 'Licensed Supervisor',
     image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
     experience: '10 years',
   },
   {
-    name: 'Dr. Emily Rodriguez',
-    specialty: 'Child Psychologist',
+    name: 'Emily Rodriguez',
+    specialty: 'Student Therapist',
     image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    experience: '8 years',
+    experience: 'Supervised',
   },
   {
     name: 'Dr. James Williams',
-    specialty: 'Anxiety Specialist',
+    specialty: 'Clinical Psychologist',
     image: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
     experience: '15 years',
   },
@@ -37,12 +37,10 @@ export const TherapistShowcase = () => {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold mb-4 text-gray-800" style={{ fontFamily: 'serif' }}>
-            Meet Our Therapists,
-            <br />
-            You're in Good Hands
+            Meet Our Team
           </h2>
           <p className="text-gray-700 max-w-2xl mx-auto">
-            Our team of licensed professionals brings years of experience and compassion to help you on your mental health journey.
+            From passionate student therapists to experienced supervisors, we have the right professional for you.
           </p>
         </div>
 

@@ -4,25 +4,25 @@ import { Link } from 'react-router-dom';
 
 const posts = [
   {
-    title: 'Understanding Anxiety and How to Manage It',
-    excerpt: 'Learn practical strategies to cope with anxiety in your daily life.',
+    title: 'Why Choose Student Therapy?',
+    excerpt: 'Understanding the benefits of supervised sessions.',
     image: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
     date: 'Nov 15, 2025',
-    category: 'Mental Health',
+    category: 'CareNest Guide',
   },
   {
-    title: 'The Importance of Self-Care in Mental Wellness',
-    excerpt: 'Discover why prioritizing yourself is essential for mental health.',
+    title: 'How Our Matching Works',
+    excerpt: 'Finding the perfect therapist for your needs.',
     image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
     date: 'Nov 10, 2025',
-    category: 'Wellness',
+    category: 'Features',
   },
   {
-    title: 'How Therapy Can Transform Your Life',
-    excerpt: 'Real stories from clients who found healing through therapy.',
+    title: 'Breaking Financial Barriers',
+    excerpt: 'Making mental health care accessible to all.',
     image: 'https://images.unsplash.com/photo-1527689368864-3a821dbccc34?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
     date: 'Nov 5, 2025',
-    category: 'Therapy',
+    category: 'Mission',
   },
 ];
 
@@ -34,12 +34,10 @@ export const BlogSection = () => {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold mb-4 text-gray-800" style={{ fontFamily: 'serif' }}>
-            Stay Updated with Our
-            <br />
             Latest Insights
           </h2>
           <p className="text-gray-700 max-w-2xl mx-auto">
-            Explore our blog for expert advice, mental health tips, and inspiring stories from our community.
+            Learn more about our mission and mental wellness.
           </p>
         </div>
 
