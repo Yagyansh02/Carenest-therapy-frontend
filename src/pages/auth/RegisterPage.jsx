@@ -15,14 +15,19 @@ export const RegisterPage = () => {
   });
   const [localError, setLocalError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
-  const { register, loading, error, clearError, isAuthenticated } = useAuth();
+  const { register, loading, error, clearError, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+    if (isAuthenticated && user) {
+      // If user is a therapist, redirect to profile setup, otherwise to dashboard
+      if (user.role === 'therapist') {
+        navigate('/therapist/setup-profile', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   useEffect(() => {
     return () => {
@@ -81,9 +86,28 @@ export const RegisterPage = () => {
     try {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
-      // Navigation will happen via useEffect when isAuthenticated changes
+      // Registration successful, redirect to login
+      navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
     } catch (err) {
-      setLocalError(err.message || 'Registration failed. Please try again.');
+      console.error('Registration error:', err);
+      
+      // Get the error message from various possible sources
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message && err.message !== 'Registration failed') {
+        errorMessage = err.message;
+      }
+      
+      // Handle specific error cases
+      if (errorMessage.toLowerCase().includes('already exists') || 
+          errorMessage.toLowerCase().includes('duplicate') ||
+          errorMessage.toLowerCase().includes('email')) {
+        setLocalError('An account with this email already exists. Please use a different email or try logging in.');
+      } else {
+        setLocalError(errorMessage);
+      }
     }
   };
 
@@ -100,8 +124,39 @@ export const RegisterPage = () => {
         </div>
 
         {(error || localError) && (
-          <div className="rounded-md bg-red-50 p-4 border border-red-200">
-            <p className="text-sm text-red-800">{error || localError}</p>
+          <div className="rounded-lg bg-red-50 p-4 border-l-4 border-red-500">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-red-800">{error || localError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {Object.keys(validationErrors).length > 0 && (
+          <div className="rounded-lg bg-yellow-50 p-4 border-l-4 border-yellow-500">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Please fix the following errors:
+                </h3>
+                <ul className="mt-2 text-sm text-yellow-700 list-disc list-inside space-y-1">
+                  {Object.values(validationErrors).map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         )}
 
@@ -116,9 +171,15 @@ export const RegisterPage = () => {
                 value={formData.fullName}
                 onChange={handleChange}
                 disabled={loading}
+                className={validationErrors.fullName ? 'border-red-500' : ''}
               />
               {validationErrors.fullName && (
-                <p className="mt-1 text-xs text-red-600">{validationErrors.fullName}</p>
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {validationErrors.fullName}
+                </p>
               )}
             </div>
 
@@ -131,9 +192,15 @@ export const RegisterPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
+                className={validationErrors.email ? 'border-red-500' : ''}
               />
               {validationErrors.email && (
-                <p className="mt-1 text-xs text-red-600">{validationErrors.email}</p>
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {validationErrors.email}
+                </p>
               )}
             </div>
 
@@ -146,9 +213,15 @@ export const RegisterPage = () => {
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
+                className={validationErrors.password ? 'border-red-500' : ''}
               />
               {validationErrors.password && (
-                <p className="mt-1 text-xs text-red-600">{validationErrors.password}</p>
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {validationErrors.password}
+                </p>
               )}
             </div>
 
@@ -161,9 +234,15 @@ export const RegisterPage = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 disabled={loading}
+                className={validationErrors.confirmPassword ? 'border-red-500' : ''}
               />
               {validationErrors.confirmPassword && (
-                <p className="mt-1 text-xs text-red-600">{validationErrors.confirmPassword}</p>
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {validationErrors.confirmPassword}
+                </p>
               )}
             </div>
 

@@ -6,6 +6,7 @@ import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { TherapistList } from '../pages/therapist/TherapistList';
 import { TherapistDetail } from '../pages/therapist/TherapistDetail';
+import { TherapistProfileSetup } from '../pages/therapist/TherapistProfileSetup';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { Profile } from '../pages/user/Profile';
 import { BookingPage } from '../pages/booking/BookingPage';
@@ -35,6 +36,14 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/therapist/setup-profile"
+          element={
+            <ProtectedRoute>
+              <TherapistProfileSetup />
             </ProtectedRoute>
           }
         />

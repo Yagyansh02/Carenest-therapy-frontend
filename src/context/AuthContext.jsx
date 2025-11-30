@@ -36,7 +36,10 @@ export const AuthProvider = ({ children }) => {
     if (registerUser.fulfilled.match(result)) {
       return result.payload;
     }
-    throw new Error(result.payload || 'Registration failed');
+    // Create error object with proper message
+    const error = new Error(result.payload || 'Registration failed');
+    error.response = { data: { message: result.payload } };
+    throw error;
   };
 
   const logout = async () => {

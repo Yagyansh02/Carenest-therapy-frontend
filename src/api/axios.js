@@ -113,7 +113,21 @@ apiClient.interceptors.response.use(
     }
 
     // Handle and log errors
-    const handledError = handleError(error, 'API Request');
+    // Don't log 404s for specific endpoints where it's expected
+    const isExpectedError = error.response?.status === 404 && 
+      (error.config?.url?.includes('/therapists/me') || error.config?.url?.includes('/users/me'));
+    
+    if (!isExpectedError) {
+      logger.error(`API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error);
+    }
+
+    const handledError = handleError(error, isExpectedError ? '' : 'API Request');
+    
+    // Attach original response for components to check status
+    if (error.response) {
+      handledError.response = error.response;
+    }
+    
     return Promise.reject(handledError);
   }
 );
