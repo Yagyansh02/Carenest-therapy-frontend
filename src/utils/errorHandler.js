@@ -74,8 +74,8 @@ export const parseApiError = (error) => {
  * Handle error globally
  */
 export const handleError = (error, context = '') => {
-  // Log error in development
-  if (env.isDevelopment) {
+  // Log error in development, unless context is empty (suppressed)
+  if (env.isDevelopment && context) {
     console.error(`[Error${context ? ` - ${context}` : ''}]:`, error);
   }
 

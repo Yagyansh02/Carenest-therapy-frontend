@@ -14,13 +14,13 @@ export const AboutSection = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-gray-800" style={{ fontFamily: 'serif' }}>
-              We Care About Your Life
+              Bridging the Gap in Mental Health
             </h2>
             <p className="text-gray-700 leading-relaxed mb-8">
-              At CareNest, we provide personalized mental health counseling with licensed therapists focused on your unique needs. Our team of experienced professionals is dedicated to helping you achieve mental wellness through evidence-based therapy approaches.
+              Mental health care is often expensive and inaccessible. CareNest solves this by connecting you with supervised student therapists and licensed professionals. We provide a safe, structured space where you can get high-quality care at affordable prices, while helping new therapists gain valuable experience.
             </p>
             <button className="px-8 py-3 text-base font-medium text-white bg-[#748DAE] rounded-full hover:bg-[#748DAE]/90 transition-colors shadow-lg">
-              Learn More
+              Our Mission
             </button>
           </motion.div>
 

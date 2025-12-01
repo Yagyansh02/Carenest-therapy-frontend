@@ -3,28 +3,28 @@ import { useInView } from 'react-intersection-observer';
 
 const faqs = [
   {
-    question: 'What types of therapy do you offer?',
-    answer: 'We offer individual therapy, couples counseling, family therapy, group sessions, and specialized treatment for anxiety, depression, trauma, and more.',
+    question: 'What is CareNest?',
+    answer: 'CareNest is an online platform connecting you with qualified therapists and supervised psychology students for affordable mental health support.',
   },
   {
-    question: 'How do I know if therapy is right for me?',
-    answer: 'Therapy can benefit anyone seeking to improve their mental health, navigate life changes, or work through challenging emotions and situations.',
+    question: 'Why is therapy so affordable here?',
+    answer: 'We offer sessions with postgraduate psychology students who provide therapy at lower fees under the strict supervision of licensed experts.',
   },
   {
-    question: 'Are sessions confidential?',
-    answer: 'Yes, all sessions are completely confidential and conducted on HIPAA-compliant platforms to ensure your privacy and security.',
+    question: 'Is student therapy safe and effective?',
+    answer: 'Yes. Every student therapist is guided by a verified supervisor who reviews progress and ensures high quality and ethical standards.',
   },
   {
-    question: 'How long does each session last?',
-    answer: 'Standard therapy sessions typically last 50-60 minutes, though this can vary based on your specific needs and treatment plan.',
+    question: 'How does the matching process work?',
+    answer: 'You complete a simple assessment about your needs and goals, and our system matches you with therapists who specialize in those areas.',
   },
   {
-    question: 'Do you accept insurance?',
-    answer: 'We accept most major insurance providers. Contact us to verify your coverage and discuss payment options.',
+    question: 'Is the entire process online?',
+    answer: 'Yes. From finding a therapist to attending video sessions and tracking progress, everything happens on our secure online platform.',
   },
   {
-    question: 'Can I choose my therapist?',
-    answer: 'Absolutely! You can browse our therapist profiles and select the professional who best fits your needs and preferences.',
+    question: 'Can I choose a licensed professional instead?',
+    answer: 'Absolutely. You have the freedom to choose between student therapists and licensed professionals based on your preference and budget.',
   },
 ];
 
@@ -36,12 +36,10 @@ export const FAQSection = () => {
       <div className="mx-auto max-w-4xl px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold mb-4 text-gray-800" style={{ fontFamily: 'serif' }}>
-            Frequently Asked
-            <br />
-            Questions
+            Frequently Asked Questions
           </h2>
           <p className="text-gray-700">
-            Find answers to common questions about our services and therapy process.
+            Everything you need to know about CareNest.
           </p>
         </div>
 

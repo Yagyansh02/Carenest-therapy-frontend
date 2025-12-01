@@ -4,19 +4,19 @@ import { useInView } from 'react-intersection-observer';
 
 const testimonials = [
   {
-    content: "CareNest helped me find a therapist who truly understands my anxiety. The video sessions are so convenient and have made a real difference in my life.",
+    content: "I always wanted therapy but couldn't afford it. CareNest's student therapist program made it possible for me to get help.",
     author: "Sarah Johnson",
     role: "Client",
     rating: 5,
   },
   {
-    content: "As a therapist, this platform makes it easy to manage my practice and focus on what matters most - my patients. Highly recommend for both clients and providers.",
+    content: "As a supervisor, I love seeing young therapists grow. CareNest provides a structured environment for them to learn and help others.",
     author: "Dr. Michael Chen",
-    role: "Clinical Psychologist",
+    role: "Supervisor",
     rating: 5,
   },
   {
-    content: "The assessment tools gave me great insights before I even started my first session. The entire process has been smooth and professional.",
+    content: "The matching process was spot on. I found a therapist who really understands my cultural background and needs.",
     author: "Emily Rodriguez",
     role: "Client",
     rating: 5,
@@ -31,10 +31,10 @@ export const Testimonials = () => {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold mb-4" style={{ fontFamily: 'serif' }}>
-            What Our Clients Say
+            Community Stories
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Hear from people who have experienced positive change through our platform.
+            Hear from clients and professionals in our ecosystem.
           </p>
         </div>
         
