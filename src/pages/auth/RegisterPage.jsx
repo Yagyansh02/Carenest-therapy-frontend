@@ -20,12 +20,9 @@ export const RegisterPage = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // If user is a therapist, redirect to profile setup, otherwise to dashboard
-      if (user.role === 'therapist') {
-        navigate('/therapist/setup-profile', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
+      // Registration should not auto-login, but if somehow user is authenticated,
+      // redirect to dashboard
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -86,8 +83,13 @@ export const RegisterPage = () => {
     try {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
-      // Registration successful, redirect to login
-      navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
+      // Registration successful, redirect to login with success message
+      navigate('/login', { 
+        state: { 
+          message: 'Registration successful! Please log in to continue.',
+          email: formData.email 
+        } 
+      });
     } catch (err) {
       console.error('Registration error:', err);
       

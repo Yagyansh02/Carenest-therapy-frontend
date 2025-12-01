@@ -11,6 +11,8 @@ import { TherapistProfileSetup } from '../pages/therapist/TherapistProfileSetup'
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { Profile } from '../pages/user/Profile';
 import { BookingPage } from '../pages/booking/BookingPage';
+import { AssessmentForm } from '../pages/assessment/AssessmentForm';
+import { TherapistRecommendations } from '../pages/assessment/TherapistRecommendations';
 
 export const AppRoutes = () => {
   return (
@@ -54,6 +56,22 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <BookingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assessment"
+          element={
+            <ProtectedRoute>
+              <AssessmentForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assessment/recommendations"
+          element={
+            <ProtectedRoute>
+              <TherapistRecommendations />
             </ProtectedRoute>
           }
         />

@@ -1,15 +1,17 @@
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Calendar, MessageSquare, Settings, FileText, Heart } from 'lucide-react';
 import { TherapistDashboardContent } from '../../components/dashboard/TherapistDashboardContent';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const getDashboardContent = () => {
     switch (user?.role) {
       case 'patient':
-        return <PatientDashboard user={user} />;
+        return <PatientDashboard user={user} navigate={navigate} />;
       case 'therapist':
         return <TherapistDashboardContent user={user} />;
       case 'supervisor':
@@ -43,7 +45,7 @@ export const DashboardPage = () => {
   );
 };
 
-const PatientDashboard = ({ user }) => {
+const PatientDashboard = ({ user, navigate }) => {
   const stats = [
     { label: 'Upcoming Sessions', value: '3', icon: Calendar, color: 'bg-[#9ECAD6]' },
     { label: 'Messages', value: '5', icon: MessageSquare, color: 'bg-[#748DAE]' },
@@ -103,11 +105,17 @@ const PatientDashboard = ({ user }) => {
         >
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="space-y-3">
-            <button className="w-full p-4 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-all hover:shadow-md">
+            <button 
+              onClick={() => navigate('/therapists')}
+              className="w-full p-4 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-all hover:shadow-md"
+            >
               <p className="font-medium">Book New Session</p>
               <p className="text-sm opacity-90 mt-1">Schedule with your therapist</p>
             </button>
-            <button className="w-full p-4 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-all hover:shadow-md">
+            <button 
+              onClick={() => navigate('/assessment')}
+              className="w-full p-4 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-all hover:shadow-md"
+            >
               <p className="font-medium">Take Assessment</p>
               <p className="text-sm opacity-90 mt-1">Complete wellness check-in</p>
             </button>

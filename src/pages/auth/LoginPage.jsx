@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { assessmentService } from '../../api/assessment';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
@@ -9,17 +10,60 @@ export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState('');
-  const { login, loading, error, clearError, isAuthenticated } = useAuth();
+  const [successMessage, setSuccessMessage] = useState('');
+  const { login, loading, error, clearError, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
+  // Show success message from registration
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(from, { replace: true });
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      if (location.state?.email) {
+        setEmail(location.state.email);
+      }
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [location.state]);
+
+  // Check if user needs to complete assessment after login
+  useEffect(() => {
+    const checkAssessmentStatus = async () => {
+      if (isAuthenticated && user) {
+        // Therapists go to profile setup if not completed
+        if (user.role === 'therapist') {
+          navigate('/therapist/setup-profile', { replace: true });
+          return;
+        }
+        
+        // Patients: check if they have completed assessment
+        if (user.role === 'patient') {
+          try {
+            await assessmentService.getMyAssessment();
+            // Assessment exists, go to requested page or dashboard
+            navigate(from, { replace: true });
+          } catch (err) {
+            // No assessment found (404), redirect to assessment form
+            if (err.response?.status === 404) {
+              navigate('/assessment', { 
+                replace: true,
+                state: { message: 'Please complete your assessment to help us match you with the right therapist.' }
+              });
+            } else {
+              // Other error, just go to dashboard
+              navigate(from, { replace: true });
+            }
+          }
+        } else {
+          // Other roles go to dashboard
+          navigate(from, { replace: true });
+        }
+      }
+    };
+
+    checkAssessmentStatus();
+  }, [isAuthenticated, user, navigate, from]);
 
   useEffect(() => {
     return () => {
@@ -55,6 +99,12 @@ export const LoginPage = () => {
             Sign in to your CareNest account
           </p>
         </div>
+
+        {successMessage && (
+          <div className="rounded-md bg-green-50 p-4 border border-green-200">
+            <p className="text-sm text-green-800">{successMessage}</p>
+          </div>
+        )}
 
         {(error || localError) && (
           <div className="rounded-md bg-red-50 p-4 border border-red-200">
