@@ -20,7 +20,7 @@ export const AboutPage = () => {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 mb-6 shadow-sm">
                 <Sparkles className="w-4 h-4 text-[#748DAE]" />
-                <span className="text-sm font-medium text-gray-600">Revolutionizing Mental Health Care</span>
+                <span className="text-sm font-medium text-gray-600">Revolutionizing Mental Health</span>
               </div>
               <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-gray-900" style={{ fontFamily: 'serif' }}>
                 Bridging the Gap in
