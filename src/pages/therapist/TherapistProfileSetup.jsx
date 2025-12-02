@@ -361,14 +361,6 @@ export const TherapistProfileSetup = () => {
                   </span>
                 ) : 'Complete Profile Setup'}
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => navigate('/dashboard')}
-                className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 py-3 text-lg font-semibold"
-              >
-                Skip for Now
-              </Button>
             </div>
           </form>
         </div>
