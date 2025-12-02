@@ -156,10 +156,10 @@ export const TherapistProfileSetup = () => {
               {/* Session Rate */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Session Rate (USD) *
+                  Session Rate (Rs) *
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Rs</span>
                   <Input
                     type="number"
                     name="sessionRate"
