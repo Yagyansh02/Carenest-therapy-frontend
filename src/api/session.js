@@ -5,7 +5,10 @@ export const sessionService = {
   createSession: (data) => api.post('/sessions', data),
   
   // Get all sessions for current user (filtered by role)
-  getAllSessions: () => api.get('/sessions'),
+  getAllSessions: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return api.get(`/sessions${queryString ? `?${queryString}` : ''}`);
+  },
   
   // Get specific session by ID
   getSessionById: (id) => api.get(`/sessions/${id}`),

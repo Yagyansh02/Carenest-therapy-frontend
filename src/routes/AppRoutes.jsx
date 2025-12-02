@@ -22,6 +22,9 @@ import { SupervisorProfileSetup } from '../pages/supervisor/SupervisorProfileSet
 import { MyFeedbackPage } from '../pages/feedback/MyFeedbackPage';
 import { GiveFeedbackPage } from '../pages/feedback/GiveFeedbackPage';
 import { PatientFeedbackHistory } from '../pages/feedback/PatientFeedbackHistory';
+import { TherapistReports } from '../pages/supervisor/TherapistReports';
+import { TherapistDetailedReport } from '../pages/supervisor/TherapistDetailedReport';
+import { AdminDashboard } from '../pages/admin/AdminDashboard';
 
 export const AppRoutes = () => {
   return (
@@ -133,6 +136,22 @@ export const AppRoutes = () => {
           }
         />
         <Route
+          path="/supervisor/reports"
+          element={
+            <ProtectedRoute>
+              <TherapistReports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/supervisor/therapist-report/:therapistId"
+          element={
+            <ProtectedRoute>
+              <TherapistDetailedReport />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/my-feedback"
           element={
             <ProtectedRoute>
@@ -153,6 +172,14 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <PatientFeedbackHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
