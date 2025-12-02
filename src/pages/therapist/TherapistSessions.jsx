@@ -4,6 +4,7 @@ import { sessionService } from '../../api/session';
 import { feedbackService } from '../../api/feedback';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { PatientAssessmentModal } from '../../components/therapist/PatientAssessmentModal';
 
 export const TherapistSessions = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export const TherapistSessions = () => {
   const [actionLoading, setActionLoading] = useState(null);
   const [meetingLinkModal, setMeetingLinkModal] = useState({ show: false, sessionId: null, meetingLink: '' });
   const [sessionFeedbacks, setSessionFeedbacks] = useState({}); // Track which sessions have feedback
+  const [assessmentModal, setAssessmentModal] = useState({ show: false, patientId: null, patientName: '' });
 
   useEffect(() => {
     fetchSessions();
@@ -387,6 +389,23 @@ export const TherapistSessions = () => {
 
                   {/* Actions */}
                   <div className="flex flex-col gap-2 lg:w-56">
+                    {/* View Patient Assessment - Only for confirmed/scheduled sessions */}
+                    {(session.status === 'confirmed' || session.status === 'scheduled' || session.status === 'completed') && (
+                      <button
+                        onClick={() => setAssessmentModal({
+                          show: true,
+                          patientId: session.patientId._id,
+                          patientName: session.patientId.fullName
+                        })}
+                        className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        View Assessment
+                      </button>
+                    )}
+
                     {/* Accept/Reject Pending Session */}
                     {session.status === 'pending' && (
                       <>
@@ -511,6 +530,14 @@ export const TherapistSessions = () => {
           </div>
         </div>
       )}
+
+      {/* Patient Assessment Modal */}
+      <PatientAssessmentModal
+        isOpen={assessmentModal.show}
+        onClose={() => setAssessmentModal({ show: false, patientId: null, patientName: '' })}
+        patientId={assessmentModal.patientId}
+        patientName={assessmentModal.patientName}
+      />
     </div>
   );
 };

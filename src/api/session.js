@@ -14,7 +14,7 @@ export const sessionService = {
   getMyPatientSessions: () => api.get('/sessions/patient/my-sessions'),
   
   // Get therapist's own sessions
-  getMyTherapistSessions: () => api.get('/sessions/therapist/my-sessions'),
+  getMyTherapistSessions: (params) => api.get('/sessions/therapist/my-sessions', { params }),
   
   // Get pending sessions (therapist only)
   getPendingSessions: () => api.get('/sessions/therapist/pending'),

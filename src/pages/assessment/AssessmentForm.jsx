@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { assessmentService } from '../../api/assessment';
+import { AssessmentPDF } from '../../components/assessment/AssessmentPDF';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 
@@ -11,6 +13,7 @@ export const AssessmentForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [hasAssessment, setHasAssessment] = useState(false);
   const [formData, setFormData] = useState({
     ageGroup: '',
     occupation: '',
@@ -37,6 +40,7 @@ export const AssessmentForm = () => {
       try {
         const response = await assessmentService.getMyAssessment();
         if (response.data?.data) {
+          setHasAssessment(true);
           // Pre-fill form with existing data
           const existingData = response.data.data.answers;
           setFormData({
@@ -378,6 +382,23 @@ export const AssessmentForm = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
+        {hasAssessment && (
+          <div className="mb-6 p-4 bg-white rounded-lg shadow-sm flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold text-gray-900">Assessment Completed</h3>
+              <p className="text-sm text-gray-600">You can download your assessment report or update your answers below.</p>
+            </div>
+            <PDFDownloadLink
+              document={<AssessmentPDF assessment={formData} />}
+              fileName="assessment-report.pdf"
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+            >
+              {({ blob, url, loading, error }) =>
+                loading ? 'Generating PDF...' : 'Download Report'
+              }
+            </PDFDownloadLink>
+          </div>
+        )}
         <Card className="p-8">
           {/* Welcome message */}
           {welcomeMessage && (
