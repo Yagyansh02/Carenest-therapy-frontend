@@ -18,6 +18,7 @@ import { TherapistRecommendations } from '../pages/assessment/TherapistRecommend
 import { PaymentPage } from '../pages/payment/PaymentPage';
 import { ManageTherapists } from '../pages/supervisor/ManageTherapists';
 import { TherapistProfileView } from '../pages/supervisor/TherapistProfileView';
+import { SupervisorProfileSetup } from '../pages/supervisor/SupervisorProfileSetup';
 
 export const AppRoutes = () => {
   return (
@@ -117,6 +118,14 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <TherapistProfileView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/supervisor/profile-setup"
+          element={
+            <ProtectedRoute>
+              <SupervisorProfileSetup />
             </ProtectedRoute>
           }
         />

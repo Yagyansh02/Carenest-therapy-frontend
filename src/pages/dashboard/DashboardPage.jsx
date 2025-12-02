@@ -264,6 +264,7 @@ const PatientDashboard = ({ user, navigate }) => {
 
 const SupervisorDashboard = ({ user, navigate }) => {
   const [loading, setLoading] = useState(true);
+  const [supervisorProfile, setSupervisorProfile] = useState(null);
   const [stats, setStats] = useState({
     therapists: 0,
     totalPatients: 0,
@@ -284,10 +285,20 @@ const SupervisorDashboard = ({ user, navigate }) => {
       // Fetch supervisor profile to get supervised students
       try {
         const profileResponse = await supervisorService.getMyProfile();
-        const students = profileResponse.data.data.supervisedStudents || [];
+        const profile = profileResponse.data.data;
+        setSupervisorProfile(profile);
+        const students = profile.supervisedStudents || [];
         setSupervisedStudents(students);
       } catch (err) {
-        console.log('No supervisor profile found');
+        console.error('Error fetching supervisor profile:', err);
+        // Only redirect if it's a 404 (profile not found), not other errors
+        if (err.response?.status === 404) {
+          console.log('No supervisor profile found - redirecting to setup');
+          navigate('/supervisor/profile-setup');
+          return;
+        }
+        // For other errors, continue loading with empty data
+        console.log('Continuing with empty supervisor data');
       }
 
       // Fetch all therapists
@@ -369,6 +380,36 @@ const SupervisorDashboard = ({ user, navigate }) => {
 
   return (
     <div className="space-y-8">
+      {/* Supervisor Profile ID Card */}
+      {supervisorProfile && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-[#9ECAD6] to-[#748DAE] rounded-lg shadow-md p-6 text-white"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Your Supervisor Profile ID</h3>
+              <p className="text-sm opacity-90 mb-3">Share this ID with student therapists who want to link to you</p>
+              <div className="flex items-center gap-3">
+                <code className="bg-white/20 px-4 py-2 rounded font-mono text-lg tracking-wide">
+                  {supervisorProfile._id}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(supervisorProfile._id);
+                    alert('Supervisor ID copied to clipboard!');
+                  }}
+                  className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded transition-colors"
+                >
+                  Copy ID
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardStats.map((stat, index) => (
           <motion.div
