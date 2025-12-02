@@ -8,11 +8,14 @@ import { RegisterPage } from '../pages/auth/RegisterPage';
 import { TherapistList } from '../pages/therapist/TherapistList';
 import { TherapistDetail } from '../pages/therapist/TherapistDetail';
 import { TherapistProfileSetup } from '../pages/therapist/TherapistProfileSetup';
+import { TherapistSessions } from '../pages/therapist/TherapistSessions';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { Profile } from '../pages/user/Profile';
 import { BookingPage } from '../pages/booking/BookingPage';
+import { SessionsList } from '../pages/sessions/SessionsList';
 import { AssessmentForm } from '../pages/assessment/AssessmentForm';
 import { TherapistRecommendations } from '../pages/assessment/TherapistRecommendations';
+import { PaymentPage } from '../pages/payment/PaymentPage';
 
 export const AppRoutes = () => {
   return (
@@ -52,6 +55,14 @@ export const AppRoutes = () => {
           }
         />
         <Route
+          path="/therapist/sessions"
+          element={
+            <ProtectedRoute>
+              <TherapistSessions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/book/:therapistId"
           element={
             <ProtectedRoute>
@@ -72,6 +83,22 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <TherapistRecommendations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sessions"
+          element={
+            <ProtectedRoute>
+              <SessionsList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment"
+          element={
+            <ProtectedRoute>
+              <PaymentPage />
             </ProtectedRoute>
           }
         />
