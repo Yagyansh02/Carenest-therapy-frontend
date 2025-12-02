@@ -1,7 +1,7 @@
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Calendar, MessageSquare, Settings, FileText, Heart } from 'lucide-react';
+import { User, Calendar, MessageSquare, Settings, FileText, Heart, TrendingUp, Clock, CheckCircle, XCircle, Activity, Award } from 'lucide-react';
 import { TherapistDashboardContent } from '../../components/dashboard/TherapistDashboardContent';
 import { useState, useEffect, useCallback } from 'react';
 import { sessionService } from '../../api/session';
@@ -64,12 +64,14 @@ export const DashboardPage = () => {
 const PatientDashboard = ({ user, navigate }) => {
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState([]);
-  const [assessments, setAssessments] = useState([]);
   const [stats, setStats] = useState({
     upcomingSessions: 0,
-    messages: 0,
-    assessments: 0,
-    progress: 0
+    completedSessions: 0,
+    cancelledSessions: 0,
+    totalHours: 0,
+    progress: 0,
+    currentTherapist: null,
+    therapistProfileId: null
   });
 
   useEffect(() => {
@@ -85,19 +87,6 @@ const PatientDashboard = ({ user, navigate }) => {
       const allSessions = sessionsResponse.data.data.sessions || [];
       setSessions(allSessions);
 
-      // Fetch assessment
-      let hasAssessment = false;
-      try {
-        const assessmentResponse = await assessmentService.getMyAssessment();
-        if (assessmentResponse.data.data.assessment) {
-          hasAssessment = true;
-          setAssessments([assessmentResponse.data.data.assessment]);
-        }
-      } catch (err) {
-        console.log('No assessment found');
-        setAssessments([]);
-      }
-
       // Calculate stats
       const now = new Date();
       const upcomingCount = allSessions.filter(s => 
@@ -109,6 +98,10 @@ const PatientDashboard = ({ user, navigate }) => {
         s.status === 'completed'
       ).length;
 
+      const cancelledCount = allSessions.filter(s => 
+        s.status === 'cancelled'
+      ).length;
+
       const totalScheduledOrCompleted = allSessions.filter(s => 
         ['confirmed', 'completed', 'scheduled'].includes(s.status)
       ).length;
@@ -117,11 +110,48 @@ const PatientDashboard = ({ user, navigate }) => {
         ? Math.round((completedCount / totalScheduledOrCompleted) * 100) 
         : 0;
 
+      // Calculate total therapy hours (assuming 1 hour per session)
+      const totalHours = completedCount * 1;
+
+      // Get current therapist (from most recent session)
+      const sortedSessions = [...allSessions].sort((a, b) => 
+        new Date(b.scheduledAt) - new Date(a.scheduledAt)
+      );
+      const currentTherapist = sortedSessions[0]?.therapistId || null;
+      
+      // Get therapist profile ID
+      // The therapist profile ID can be in therapistProfile._id or we need to fetch it
+      let therapistProfileId = null;
+      if (currentTherapist?.therapistProfile?._id) {
+        therapistProfileId = currentTherapist.therapistProfile._id;
+      } else if (currentTherapist?._id) {
+        // If therapistProfile is not populated, we'll need to fetch it using the therapist user ID
+        // For now, we'll try to fetch the therapist profile by userId
+        try {
+          const therapistResponse = await therapistService.getAllTherapists(1, 1000);
+          const allTherapists = therapistResponse.data.data.therapists || [];
+          const therapistProfile = allTherapists.find(t => t.userId?._id === currentTherapist._id);
+          if (therapistProfile) {
+            therapistProfileId = therapistProfile._id;
+            // Attach the full profile for display
+            currentTherapist.therapistProfile = therapistProfile;
+          }
+        } catch (err) {
+          console.error('Error fetching therapist profile:', err);
+        }
+      }
+      
+      console.log('Current Therapist:', currentTherapist);
+      console.log('Therapist Profile ID:', therapistProfileId);
+
       setStats({
         upcomingSessions: upcomingCount,
-        messages: 0, // TODO: Implement messaging system
-        assessments: hasAssessment ? 1 : 0,
-        progress: progressPercent
+        completedSessions: completedCount,
+        cancelledSessions: cancelledCount,
+        totalHours,
+        progress: progressPercent,
+        currentTherapist,
+        therapistProfileId
       });
 
     } catch (error) {
@@ -139,15 +169,23 @@ const PatientDashboard = ({ user, navigate }) => {
     .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
     .slice(0, 3);
 
+  const recentSessions = sessions
+    .filter(s => s.status === 'completed')
+    .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt))
+    .slice(0, 5);
+
+  const nextSession = upcomingSessions[0];
+
   const dashboardStats = [
-    { label: 'Upcoming Sessions', value: loading ? '...' : stats.upcomingSessions.toString(), icon: Calendar, color: 'bg-[#9ECAD6]' },
-    { label: 'Messages', value: loading ? '...' : stats.messages.toString(), icon: MessageSquare, color: 'bg-[#748DAE]' },
-    { label: 'Assessments', value: loading ? '...' : stats.assessments.toString(), icon: FileText, color: 'bg-[#F5CBCB]' },
-    { label: 'Progress', value: loading ? '...' : `${stats.progress}%`, icon: Heart, color: 'bg-[#9ECAD6]' },
+    { label: 'Completed Sessions', value: loading ? '...' : stats.completedSessions.toString(), icon: CheckCircle, color: 'bg-green-500', trend: '+' + stats.completedSessions },
+    { label: 'Upcoming Sessions', value: loading ? '...' : stats.upcomingSessions.toString(), icon: Calendar, color: 'bg-[#9ECAD6]', trend: 'Next: ' + (nextSession ? new Date(nextSession.scheduledAt).toLocaleDateString() : 'None') },
+    { label: 'Total Therapy Hours', value: loading ? '...' : stats.totalHours.toString() + 'h', icon: Clock, color: 'bg-[#748DAE]', trend: stats.totalHours + ' hours completed' },
+    { label: 'Progress Rate', value: loading ? '...' : `${stats.progress}%`, icon: TrendingUp, color: 'bg-[#F5CBCB]', trend: stats.progress >= 70 ? 'Excellent!' : stats.progress >= 40 ? 'Good!' : 'Keep going!' },
   ];
 
   return (
     <div className="space-y-8">
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardStats.map((stat, index) => (
           <motion.div
@@ -157,58 +195,112 @@ const PatientDashboard = ({ user, navigate }) => {
             transition={{ delay: index * 0.1 }}
             className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-              </div>
+            <div className="flex items-center justify-between mb-3">
               <div className={`${stat.color} p-3 rounded-lg`}>
                 <stat.icon className="h-6 w-6 text-white" />
               </div>
+            </div>
+            <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
+            <p className="text-2xl font-bold text-gray-900 mb-2">{stat.value}</p>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-500">{stat.trend}</span>
             </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Next Appointment Highlight */}
+      {nextSession && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-[#9ECAD6] to-[#748DAE] rounded-xl shadow-lg p-6 text-white"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-4 rounded-lg">
+                <Calendar className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <p className="text-sm opacity-90 mb-1">Next Appointment</p>
+                <h3 className="text-2xl font-bold mb-1">
+                  {new Date(nextSession.scheduledAt).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </h3>
+                <p className="text-lg opacity-95">
+                  {new Date(nextSession.scheduledAt).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })} with {nextSession.therapistId?.fullName || 'Therapist'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/sessions')}
+              className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              View Details
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Upcoming Sessions */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+          className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100"
         >
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Upcoming Sessions</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Upcoming Sessions</h2>
+            <button
+              onClick={() => navigate('/sessions')}
+              className="text-[#748DAE] hover:text-[#657B9D] text-sm font-medium"
+            >
+              View All →
+            </button>
+          </div>
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#748DAE] mx-auto"></div>
             </div>
           ) : upcomingSessions.length > 0 ? (
-            <div className="space-y-4">
-              {upcomingSessions.map((session) => (
+            <div className="space-y-3">
+              {upcomingSessions.map((session, idx) => (
                 <div 
                   key={session._id}
                   onClick={() => navigate('/sessions')}
-                  className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg hover:shadow-sm transition-shadow cursor-pointer"
+                  className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg hover:shadow-sm transition-all cursor-pointer border border-gray-100"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {session.therapistId?.fullName || 'Therapist'}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {new Date(session.scheduledAt).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          month: 'short',
-                          day: 'numeric'
-                        })} at {new Date(session.scheduledAt).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                      <p className="text-xs text-[#748DAE] mt-2 font-medium">
-                        {session.therapistId?.therapistProfile?.specializations?.[0] || 'Therapy Session'}
-                      </p>
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="bg-[#9ECAD6] p-2 rounded-lg">
+                        <Calendar className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">
+                          {session.therapistId?.fullName || 'Therapist'}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {new Date(session.scheduledAt).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                          })} • {new Date(session.scheduledAt).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                        <p className="text-xs text-[#748DAE] mt-1 font-medium">
+                          {session.therapistId?.therapistProfile?.specializations?.[0] || 'Therapy Session'}
+                        </p>
+                      </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                       session.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                       session.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
                       'bg-gray-100 text-gray-800'
@@ -220,57 +312,144 @@ const PatientDashboard = ({ user, navigate }) => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">No upcoming sessions</p>
+            <div className="text-center py-12">
+              <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm mb-4">No upcoming sessions</p>
               <button
                 onClick={() => navigate('/therapists')}
-                className="mt-4 text-[#748DAE] hover:text-[#657B9D] text-sm font-medium"
+                className="bg-[#748DAE] hover:bg-[#657B9D] text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                Book a session →
+                Book a Session
               </button>
             </div>
           )}
         </motion.div>
 
+        {/* Quick Actions & Therapist Info */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+          className="space-y-6"
         >
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="space-y-3">
-            <button 
-              onClick={() => navigate('/sessions')}
-              className="w-full p-4 text-left bg-gradient-to-r from-[#9ECAD6] to-[#748DAE] hover:from-[#8BB9C5] hover:to-[#657B9D] text-white rounded-lg transition-all hover:shadow-md"
-            >
-              <p className="font-medium">View My Sessions</p>
-              <p className="text-sm opacity-90 mt-1">Manage your appointments</p>
-            </button>
-            <button 
-              onClick={() => navigate('/therapists')}
-              className="w-full p-4 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-all hover:shadow-md"
-            >
-              <p className="font-medium">Book New Session</p>
-              <p className="text-sm opacity-90 mt-1">Schedule with your therapist</p>
-            </button>
-            <button 
-              onClick={() => navigate('/assessment')}
-              className="w-full p-4 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-all hover:shadow-md"
-            >
-              <p className="font-medium">Take Assessment</p>
-              <p className="text-sm opacity-90 mt-1">Complete wellness check-in</p>
-            </button>
-            <button 
-              onClick={() => navigate('/feedback-history')}
-              className="w-full p-4 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-all hover:shadow-md"
-            >
-              <p className="font-medium">View Feedback History</p>
-              <p className="text-sm opacity-90 mt-1">See all session feedback</p>
-            </button>
+          {/* Current Therapist Card */}
+          {stats.currentTherapist && (
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Therapist</h3>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#9ECAD6] to-[#748DAE] rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">
+                    {stats.currentTherapist.fullName?.charAt(0) || 'T'}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {stats.currentTherapist.fullName || 'Your Therapist'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {stats.currentTherapist.therapistProfile?.specializations?.[0] || 'Professional Therapist'}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>{stats.completedSessions} sessions completed</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Award className="h-4 w-4 text-[#748DAE]" />
+                  <span>Licensed Professional</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  // Navigate to therapist detail page using the stored therapist profile ID
+                  if (stats.therapistProfileId) {
+                    navigate(`/therapists/${stats.therapistProfileId}`);
+                  } else {
+                    console.error('Therapist profile ID not available');
+                    navigate('/therapists');
+                  }
+                }}
+                className="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                View Profile
+              </button>
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              <button 
+                onClick={() => navigate('/sessions')}
+                className="w-full p-3 text-left bg-gradient-to-r from-[#9ECAD6] to-[#748DAE] hover:from-[#8BB9C5] hover:to-[#657B9D] text-white rounded-lg transition-all hover:shadow-md"
+              >
+                <p className="font-medium text-sm">Manage Sessions</p>
+              </button>
+              <button 
+                onClick={() => navigate('/therapists')}
+                className="w-full p-3 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-all hover:shadow-md"
+              >
+                <p className="font-medium text-sm">Book New Session</p>
+              </button>
+              <button 
+                onClick={() => navigate('/feedback-history')}
+                className="w-full p-3 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-all hover:shadow-md"
+              >
+                <p className="font-medium text-sm">View Feedback</p>
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
+
+      {/* Recent Activity */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-[#748DAE]" />
+            Recent Activity
+          </h2>
+        </div>
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#748DAE] mx-auto"></div>
+          </div>
+        ) : recentSessions.length > 0 ? (
+          <div className="space-y-3">
+            {recentSessions.map((session, idx) => (
+              <div key={session._id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    Session with {session.therapistId?.fullName || 'Therapist'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(session.scheduledAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <span className="text-xs text-green-600 font-medium">Completed</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Activity className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 text-sm">No recent activity</p>
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 };
