@@ -1,29 +1,42 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { assessmentService } from '../../api/assessment';
 import { AssessmentPDF } from '../../components/assessment/AssessmentPDF';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import {
+  submitAssessment,
+  fetchMyAssessment,
+  updateFormField,
+  toggleConcern,
+  setCurrentStep,
+  nextStep as nextStepAction,
+  previousStep as previousStepAction,
+  clearError,
+  selectFormData,
+  selectCurrentStep,
+  selectHasAssessment,
+  selectLoading,
+  selectError,
+} from '../../store/slices/assessmentSlice';
 
 export const AssessmentForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const dispatch = useDispatch();
+  
+  // Redux state
+  const formData = useSelector(selectFormData);
+  const currentStep = useSelector(selectCurrentStep);
+  const hasAssessment = useSelector(selectHasAssessment);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+  
+  // Local state
   const [welcomeMessage, setWelcomeMessage] = useState('');
-  const [hasAssessment, setHasAssessment] = useState(false);
-  const [formData, setFormData] = useState({
-    ageGroup: '',
-    occupation: '',
-    lifestyle: '',
-    activityLevel: '',
-    concerns: [],
-    otherConcern: '',
-    duration: '',
-    impactLevel: 3,
-  });
+  const [validationError, setValidationError] = useState('');
+  const [hasInteractedWithStep7, setHasInteractedWithStep7] = useState(false);
 
   const totalSteps = 7;
 
@@ -34,90 +47,91 @@ export const AssessmentForm = () => {
     }
   }, [location.state]);
 
-  // Check if user already has an assessment
+  // Initialize and check if user already has an assessment
   useEffect(() => {
-    const checkExistingAssessment = async () => {
+    // Always ensure we start at step 1 on mount
+    dispatch(setCurrentStep(1));
+    
+    const loadAssessment = async () => {
       try {
-        const response = await assessmentService.getMyAssessment();
-        if (response.data?.data) {
-          setHasAssessment(true);
-          // Pre-fill form with existing data
-          const existingData = response.data.data.answers;
-          setFormData({
-            ageGroup: existingData.ageGroup || '',
-            occupation: existingData.occupation || '',
-            lifestyle: existingData.lifestyle || '',
-            activityLevel: existingData.activityLevel || '',
-            concerns: existingData.concerns || [],
-            otherConcern: existingData.otherConcern || '',
-            duration: existingData.duration || '',
-            impactLevel: existingData.impactLevel || 3,
-          });
+        const result = await dispatch(fetchMyAssessment()).unwrap();
+        // If assessment exists and has data, it will be pre-filled
+        // But we still start at step 1 for review
+        // Allow existing assessment to be submitted without re-interacting with step 7
+        if (result?.answers?.impactLevel) {
+          setHasInteractedWithStep7(true);
         }
-      } catch (err) {
-        // No existing assessment or error - that's fine, start fresh
-        console.log('No existing assessment found');
+      } catch (error) {
+        // No assessment found - form will remain empty at step 1
+        setHasInteractedWithStep7(false);
       }
     };
-    checkExistingAssessment();
-  }, []);
+    
+    loadAssessment();
+  }, [dispatch]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setError('');
+    dispatch(updateFormField({ field, value }));
+    setValidationError('');
+    dispatch(clearError('submit'));
+    
+    // Track interaction with step 7's impact level
+    if (field === 'impactLevel' && currentStep === 7) {
+      setHasInteractedWithStep7(true);
+    }
   };
 
   const handleConcernToggle = (concern) => {
-    setFormData(prev => {
-      const concerns = prev.concerns.includes(concern)
-        ? prev.concerns.filter(c => c !== concern)
-        : [...prev.concerns, concern];
-      return { ...prev, concerns };
-    });
-    setError('');
+    dispatch(toggleConcern(concern));
+    setValidationError('');
+    dispatch(clearError('submit'));
   };
 
   const validateStep = () => {
     switch (currentStep) {
       case 1:
         if (!formData.ageGroup) {
-          setError('Please select your age group');
+          setValidationError('Please select your age group');
           return false;
         }
         break;
       case 2:
         if (!formData.occupation) {
-          setError('Please select your occupation');
+          setValidationError('Please select your occupation');
           return false;
         }
         break;
       case 3:
         if (!formData.lifestyle) {
-          setError('Please select your lifestyle');
+          setValidationError('Please select your lifestyle');
           return false;
         }
         break;
       case 4:
         if (!formData.activityLevel) {
-          setError('Please select your activity level');
+          setValidationError('Please select your activity level');
           return false;
         }
         break;
       case 5:
         if (formData.concerns.length === 0) {
-          setError('Please select at least one concern');
+          setValidationError('Please select at least one concern');
           return false;
         }
         break;
       case 6:
         if (!formData.duration) {
-          setError('Please select the duration');
+          setValidationError('Please select the duration');
           return false;
         }
         break;
       case 7:
-        if (!formData.impactLevel) {
-          setError('Please rate the impact level');
+        if (!hasInteractedWithStep7) {
+          setValidationError('Please adjust the impact level slider to continue');
+          return false;
+        }
+        if (!formData.impactLevel || formData.impactLevel < 1 || formData.impactLevel > 5) {
+          setValidationError('Please rate the impact level');
           return false;
         }
         break;
@@ -130,36 +144,42 @@ export const AssessmentForm = () => {
   const handleNext = () => {
     if (validateStep()) {
       if (currentStep < totalSteps) {
-        setCurrentStep(prev => prev + 1);
+        dispatch(nextStepAction());
+        // Reset step 7 interaction flag when moving to step 7
+        if (currentStep === 6) {
+          setHasInteractedWithStep7(false);
+        }
       }
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      dispatch(previousStepAction());
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Prevent submission if not on the last step
+    if (currentStep !== totalSteps) {
+      return;
+    }
+    
     if (!validateStep()) {
       return;
     }
 
-    setLoading(true);
-    setError('');
+    setValidationError('');
 
     try {
-      await assessmentService.submitAssessment(formData);
+      await dispatch(submitAssessment(formData)).unwrap();
       // Navigate to recommendations page
       navigate('/assessment/recommendations');
     } catch (err) {
       console.error('Assessment submission error:', err);
-      setError(err.response?.data?.message || 'Failed to submit assessment. Please try again.');
-    } finally {
-      setLoading(false);
+      // Error is already set in Redux state
     }
   };
 
@@ -426,9 +446,9 @@ export const AssessmentForm = () => {
           </div>
 
           {/* Error message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+          {(validationError || error.submit) && (
+            <div className={`mb-6 p-4 rounded-lg border ${validationError?.includes('slider') ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+              <p className={`text-sm ${validationError?.includes('slider') ? 'text-blue-600' : 'text-red-600'}`}>{validationError || error.submit}</p>
             </div>
           )}
 
@@ -452,8 +472,8 @@ export const AssessmentForm = () => {
                   Next
                 </Button>
               ) : (
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Submitting...' : 'Get Recommendations'}
+                <Button type="submit" disabled={loading.submit}>
+                  {loading.submit ? 'Submitting...' : 'Get Recommendations'}
                 </Button>
               )}
             </div>

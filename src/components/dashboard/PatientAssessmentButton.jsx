@@ -1,40 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { FileText, Loader } from 'lucide-react';
-import { assessmentService } from '../../api/assessment';
 import { AssessmentPDF } from '../assessment/AssessmentPDF';
+import {
+  fetchAssessmentByPatientId,
+  selectPatientAssessment,
+  selectLoading,
+  selectError,
+} from '../../store/slices/assessmentSlice';
 
 export const PatientAssessmentButton = ({ patientId, patientName }) => {
-  const [assessment, setAssessment] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const patientAssessment = useSelector(selectPatientAssessment);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+  
   const [ready, setReady] = useState(false);
+  const [localError, setLocalError] = useState(null);
+
+  useEffect(() => {
+    // Reset when patientId changes
+    setReady(false);
+    setLocalError(null);
+  }, [patientId]);
 
   const fetchAssessment = async () => {
-    if (assessment) return; // Already fetched
+    if (patientAssessment && ready) return; // Already fetched
     
-    setLoading(true);
-    setError(null);
+    setLocalError(null);
     try {
-      const response = await assessmentService.getAssessmentByPatientId(patientId);
-      setAssessment(response.data.data);
+      await dispatch(fetchAssessmentByPatientId(patientId)).unwrap();
       setReady(true);
     } catch (err) {
       console.error("Error fetching assessment:", err);
-      setError("No assessment found");
-    } finally {
-      setLoading(false);
+      setLocalError("No assessment found");
     }
   };
 
-  if (error) {
-    return <span className="text-xs text-gray-400" title={error}>No Assessment</span>;
+  if (localError || error.fetch) {
+    return <span className="text-xs text-gray-400" title={localError || error.fetch}>No Assessment</span>;
   }
 
-  if (ready && assessment) {
+  if (ready && patientAssessment) {
     return (
       <PDFDownloadLink
-        document={<AssessmentPDF assessment={assessment.answers} patientName={patientName} />}
+        document={<AssessmentPDF assessment={patientAssessment.answers} patientName={patientName} />}
         fileName={`${patientName.replace(/\s+/g, '_')}_assessment.pdf`}
         className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-800"
         onClick={(e) => e.stopPropagation()}
@@ -55,11 +66,11 @@ export const PatientAssessmentButton = ({ patientId, patientName }) => {
         e.stopPropagation();
         fetchAssessment();
       }}
-      disabled={loading}
+      disabled={loading.fetch}
       className="text-xs flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-colors"
     >
-      {loading ? <Loader size={14} className="animate-spin" /> : <FileText size={14} />}
-      {loading ? 'Loading...' : 'View Assessment'}
+      {loading.fetch ? <Loader size={14} className="animate-spin" /> : <FileText size={14} />}
+      {loading.fetch ? 'Loading...' : 'View Assessment'}
     </button>
   );
 };
