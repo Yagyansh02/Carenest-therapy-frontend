@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Calendar, MessageSquare, Settings, FileText, Heart } from 'lucide-react';
 import { TherapistDashboardContent } from '../../components/dashboard/TherapistDashboardContent';
+import { useState, useEffect } from 'react';
+import { sessionService } from '../../api/session';
+import { assessmentService } from '../../api/assessment';
+import { supervisorService } from '../../api/supervisor';
+import { therapistService } from '../../api/therapist';
+import api from '../../api/axios';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
@@ -15,7 +21,7 @@ export const DashboardPage = () => {
       case 'therapist':
         return <TherapistDashboardContent user={user} />;
       case 'supervisor':
-        return <SupervisorDashboard user={user} />;
+        return <SupervisorDashboard user={user} navigate={navigate} />;
       default:
         return <DefaultDashboard user={user} />;
     }
@@ -46,17 +52,94 @@ export const DashboardPage = () => {
 };
 
 const PatientDashboard = ({ user, navigate }) => {
-  const stats = [
-    { label: 'Upcoming Sessions', value: '3', icon: Calendar, color: 'bg-[#9ECAD6]' },
-    { label: 'Messages', value: '5', icon: MessageSquare, color: 'bg-[#748DAE]' },
-    { label: 'Assessments', value: '2', icon: FileText, color: 'bg-[#F5CBCB]' },
-    { label: 'Progress', value: '78%', icon: Heart, color: 'bg-[#9ECAD6]' },
+  const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState([]);
+  const [assessments, setAssessments] = useState([]);
+  const [stats, setStats] = useState({
+    upcomingSessions: 0,
+    messages: 0,
+    assessments: 0,
+    progress: 0
+  });
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch sessions
+      const sessionsResponse = await sessionService.getMyPatientSessions();
+      const allSessions = sessionsResponse.data.data.sessions || [];
+      setSessions(allSessions);
+
+      // Fetch assessment
+      let hasAssessment = false;
+      try {
+        const assessmentResponse = await assessmentService.getMyAssessment();
+        if (assessmentResponse.data.data.assessment) {
+          hasAssessment = true;
+          setAssessments([assessmentResponse.data.data.assessment]);
+        }
+      } catch (err) {
+        console.log('No assessment found');
+        setAssessments([]);
+      }
+
+      // Calculate stats
+      const now = new Date();
+      const upcomingCount = allSessions.filter(s => 
+        new Date(s.scheduledAt) >= now && 
+        ['pending', 'confirmed', 'scheduled'].includes(s.status)
+      ).length;
+
+      const completedCount = allSessions.filter(s => 
+        s.status === 'completed'
+      ).length;
+
+      const totalScheduledOrCompleted = allSessions.filter(s => 
+        ['confirmed', 'completed', 'scheduled'].includes(s.status)
+      ).length;
+
+      const progressPercent = totalScheduledOrCompleted > 0 
+        ? Math.round((completedCount / totalScheduledOrCompleted) * 100) 
+        : 0;
+
+      setStats({
+        upcomingSessions: upcomingCount,
+        messages: 0, // TODO: Implement messaging system
+        assessments: hasAssessment ? 1 : 0,
+        progress: progressPercent
+      });
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const upcomingSessions = sessions
+    .filter(s => 
+      new Date(s.scheduledAt) >= new Date() && 
+      ['pending', 'confirmed', 'scheduled'].includes(s.status)
+    )
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
+    .slice(0, 3);
+
+  const dashboardStats = [
+    { label: 'Upcoming Sessions', value: loading ? '...' : stats.upcomingSessions.toString(), icon: Calendar, color: 'bg-[#9ECAD6]' },
+    { label: 'Messages', value: loading ? '...' : stats.messages.toString(), icon: MessageSquare, color: 'bg-[#748DAE]' },
+    { label: 'Assessments', value: loading ? '...' : stats.assessments.toString(), icon: FileText, color: 'bg-[#F5CBCB]' },
+    { label: 'Progress', value: loading ? '...' : `${stats.progress}%`, icon: Heart, color: 'bg-[#9ECAD6]' },
   ];
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {dashboardStats.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
@@ -84,18 +167,60 @@ const PatientDashboard = ({ user, navigate }) => {
           className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
         >
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Upcoming Sessions</h2>
-          <div className="space-y-4">
-            <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg hover:shadow-sm transition-shadow cursor-pointer">
-              <p className="font-medium text-gray-900">Dr. Sarah Johnson</p>
-              <p className="text-sm text-gray-600 mt-1">Tomorrow at 2:00 PM</p>
-              <p className="text-xs text-[#748DAE] mt-2 font-medium">Cognitive Behavioral Therapy</p>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#748DAE] mx-auto"></div>
             </div>
-            <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg hover:shadow-sm transition-shadow cursor-pointer">
-              <p className="font-medium text-gray-900">Dr. Michael Chen</p>
-              <p className="text-sm text-gray-600 mt-1">Friday at 10:00 AM</p>
-              <p className="text-xs text-[#748DAE] mt-2 font-medium">Mindfulness Session</p>
+          ) : upcomingSessions.length > 0 ? (
+            <div className="space-y-4">
+              {upcomingSessions.map((session) => (
+                <div 
+                  key={session._id}
+                  onClick={() => navigate('/sessions')}
+                  className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg hover:shadow-sm transition-shadow cursor-pointer"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        {session.therapistId?.fullName || 'Therapist'}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {new Date(session.scheduledAt).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          month: 'short',
+                          day: 'numeric'
+                        })} at {new Date(session.scheduledAt).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      <p className="text-xs text-[#748DAE] mt-2 font-medium">
+                        {session.therapistId?.therapistProfile?.specializations?.[0] || 'Therapy Session'}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      session.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      session.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {session.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">No upcoming sessions</p>
+              <button
+                onClick={() => navigate('/therapists')}
+                className="mt-4 text-[#748DAE] hover:text-[#657B9D] text-sm font-medium"
+              >
+                Book a session →
+              </button>
+            </div>
+          )}
         </motion.div>
 
         <motion.div
@@ -137,18 +262,115 @@ const PatientDashboard = ({ user, navigate }) => {
   );
 };
 
-const SupervisorDashboard = ({ user }) => {
-  const stats = [
-    { label: 'Therapists', value: '12', icon: User, color: 'bg-[#9ECAD6]' },
-    { label: 'Total Patients', value: '156', icon: Heart, color: 'bg-[#748DAE]' },
-    { label: 'Pending Reviews', value: '8', icon: FileText, color: 'bg-[#F5CBCB]' },
-    { label: 'Reports', value: '24', icon: Settings, color: 'bg-[#9ECAD6]' },
+const SupervisorDashboard = ({ user, navigate }) => {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    therapists: 0,
+    totalPatients: 0,
+    pendingReviews: 0,
+    totalSessions: 0
+  });
+  const [supervisedStudents, setSupervisedStudents] = useState([]);
+  const [recentTherapists, setRecentTherapists] = useState([]);
+
+  useEffect(() => {
+    fetchSupervisorData();
+  }, []);
+
+  const fetchSupervisorData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch supervisor profile to get supervised students
+      try {
+        const profileResponse = await supervisorService.getMyProfile();
+        const students = profileResponse.data.data.supervisedStudents || [];
+        setSupervisedStudents(students);
+      } catch (err) {
+        console.log('No supervisor profile found');
+      }
+
+      // Fetch all therapists
+      const therapistsResponse = await therapistService.getAllTherapists(1, 1000);
+      const allTherapists = therapistsResponse.data.data.therapists || [];
+      
+      // Get recently created therapists (last 5)
+      const sortedTherapists = [...allTherapists].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setRecentTherapists(sortedTherapists.slice(0, 5));
+
+      // Count verified therapists
+      const verifiedTherapists = allTherapists.filter(t => t.verificationStatus === 'verified').length;
+
+      // Fetch all users to count patients
+      let totalPatients = 0;
+      try {
+        const usersResponse = await api.get('/users?limit=1000');
+        const allUsers = usersResponse.data.data.users || [];
+        totalPatients = allUsers.filter(u => u.role === 'patient').length;
+      } catch (err) {
+        console.log('Could not fetch users');
+      }
+
+      // Fetch all sessions to count total
+      let totalSessions = 0;
+      try {
+        const sessionsResponse = await api.get('/sessions/all?limit=1');
+        totalSessions = sessionsResponse.data.data.pagination?.totalSessions || 0;
+      } catch (err) {
+        console.log('Could not fetch sessions');
+      }
+
+      // Calculate pending reviews (unverified therapists)
+      const pendingReviews = allTherapists.filter(t => t.verificationStatus === 'pending').length;
+
+      setStats({
+        therapists: verifiedTherapists,
+        totalPatients,
+        pendingReviews,
+        totalSessions
+      });
+
+    } catch (error) {
+      console.error('Error fetching supervisor data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTimeAgo = (date) => {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + ' year' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+    
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + ' month' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+    
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + ' day' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+    
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + ' hour' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+    
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + ' minute' + (Math.floor(interval) > 1 ? 's' : '') + ' ago';
+    
+    return 'Just now';
+  };
+
+  const dashboardStats = [
+    { label: 'Therapists', value: loading ? '...' : stats.therapists.toString(), icon: User, color: 'bg-[#9ECAD6]' },
+    { label: 'Total Patients', value: loading ? '...' : stats.totalPatients.toString(), icon: Heart, color: 'bg-[#748DAE]' },
+    { label: 'Pending Reviews', value: loading ? '...' : stats.pendingReviews.toString(), icon: FileText, color: 'bg-[#F5CBCB]' },
+    { label: 'Reports', value: loading ? '...' : stats.totalSessions.toString(), icon: Settings, color: 'bg-[#9ECAD6]' },
   ];
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {dashboardStats.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
@@ -176,16 +398,32 @@ const SupervisorDashboard = ({ user }) => {
           className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
         >
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="space-y-3">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-900">New therapist onboarded: Dr. Emily White</p>
-              <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#748DAE] mx-auto"></div>
             </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-900">Monthly report generated</p>
-              <p className="text-xs text-gray-500 mt-1">1 day ago</p>
+          ) : recentTherapists.length > 0 ? (
+            <div className="space-y-3">
+              {recentTherapists.map((therapist) => (
+                <div key={therapist._id} className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-900">
+                    New therapist onboarded: {therapist.userId?.fullName || 'Unknown'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{getTimeAgo(therapist.createdAt)}</p>
+                  {therapist.verificationStatus === 'pending' && (
+                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                      Pending Verification
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-8">
+              <User className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">No recent activity</p>
+            </div>
+          )}
         </motion.div>
 
         <motion.div
@@ -195,16 +433,47 @@ const SupervisorDashboard = ({ user }) => {
         >
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="space-y-3">
-            <button className="w-full p-4 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-colors">
+            <button 
+              onClick={() => navigate('/supervisor/manage-therapists')}
+              className="w-full p-4 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-colors"
+            >
               <p className="font-medium">Manage Therapists</p>
             </button>
-            <button className="w-full p-4 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-colors">
+            <button 
+              onClick={() => alert('Reports feature coming soon!')}
+              className="w-full p-4 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-colors"
+            >
               <p className="font-medium">View Reports</p>
             </button>
-            <button className="w-full p-4 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-colors">
+            <button 
+              onClick={() => alert('Settings feature coming soon!')}
+              className="w-full p-4 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-colors"
+            >
               <p className="font-medium">System Settings</p>
             </button>
           </div>
+
+          {/* Supervised Students Section */}
+          {supervisedStudents.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Supervised Students ({supervisedStudents.length})</h3>
+              <div className="space-y-2">
+                {supervisedStudents.slice(0, 3).map((student) => (
+                  <div key={student._id} className="flex items-center gap-2 text-sm">
+                    <div className="w-8 h-8 bg-[#9ECAD6] rounded-full flex items-center justify-center">
+                      <span className="text-white font-medium text-xs">
+                        {student.fullName?.charAt(0) || 'S'}
+                      </span>
+                    </div>
+                    <span className="text-gray-700">{student.fullName || student.email}</span>
+                  </div>
+                ))}
+                {supervisedStudents.length > 3 && (
+                  <p className="text-xs text-gray-500 mt-2">+{supervisedStudents.length - 3} more</p>
+                )}
+              </div>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>
