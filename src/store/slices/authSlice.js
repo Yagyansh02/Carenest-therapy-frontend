@@ -88,8 +88,12 @@ const authSlice = createSlice({
       state.error = null;
     },
     setCredentials: (state, action) => {
-      state.user = action.payload.user;
-      state.accessToken = action.payload.accessToken;
+      if (action.payload.user) {
+        state.user = action.payload.user;
+      }
+      if (action.payload.accessToken) {
+        state.accessToken = action.payload.accessToken;
+      }
       state.isAuthenticated = true;
     },
     clearCredentials: (state) => {

@@ -7,7 +7,7 @@ import { env } from '../config/env';
 const persistConfig = {
   key: env.tokenStorageKey,
   storage,
-  whitelist: ['auth'],
+  whitelist: ['user', 'isAuthenticated', 'accessToken'],
   version: 1,
 };
 
