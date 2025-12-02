@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sessionService } from '../../api/session';
+import { feedbackService } from '../../api/feedback';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { PatientAssessmentModal } from '../../components/therapist/PatientAssessmentModal';
@@ -13,6 +14,7 @@ export const TherapistSessions = () => {
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
   const [meetingLinkModal, setMeetingLinkModal] = useState({ show: false, sessionId: null, meetingLink: '' });
+  const [sessionFeedbacks, setSessionFeedbacks] = useState({}); // Track which sessions have feedback
   const [assessmentModal, setAssessmentModal] = useState({ show: false, patientId: null, patientName: '' });
 
   useEffect(() => {
@@ -23,7 +25,26 @@ export const TherapistSessions = () => {
     try {
       setLoading(true);
       const response = await sessionService.getMyTherapistSessions();
-      setSessions(response.data.data.sessions || []);
+      const sessionData = response.data.data.sessions || [];
+      setSessions(sessionData);
+
+      // Check which completed sessions have feedback
+      const completedSessions = sessionData.filter(s => s.status === 'completed');
+      const feedbackChecks = {};
+      
+      await Promise.all(completedSessions.map(async (session) => {
+        try {
+          const feedbackResponse = await feedbackService.getAllFeedbacks({
+            sessionId: session._id,
+            feedbackType: 'therapist-to-patient'
+          });
+          feedbackChecks[session._id] = feedbackResponse.data.data.feedbacks.length > 0;
+        } catch (err) {
+          feedbackChecks[session._id] = false;
+        }
+      }));
+      
+      setSessionFeedbacks(feedbackChecks);
     } catch (err) {
       setError('Failed to load sessions');
       console.error(err);
@@ -440,6 +461,27 @@ export const TherapistSessions = () => {
                       >
                         {session.therapistNotes ? 'Update Notes' : 'Add Notes'}
                       </button>
+                    )}
+
+                    {/* Give Feedback */}
+                    {session.status === 'completed' && !sessionFeedbacks[session._id] && (
+                      <button
+                        onClick={() => navigate(
+                          `/give-feedback?type=therapist-to-patient&sessionId=${session._id}&recipientId=${session.patientId._id}`
+                        )}
+                        className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition"
+                      >
+                        Give Feedback
+                      </button>
+                    )}
+                    
+                    {session.status === 'completed' && sessionFeedbacks[session._id] && (
+                      <span className="px-4 py-2 text-sm font-medium text-green-600 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Feedback Given
+                      </span>
                     )}
 
                   </div>

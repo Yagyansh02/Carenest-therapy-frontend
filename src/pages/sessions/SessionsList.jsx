@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { sessionService } from '../../api/session';
+import { feedbackService } from '../../api/feedback';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 
@@ -14,6 +15,7 @@ export const SessionsList = () => {
   const [filter, setFilter] = useState('all'); // all, upcoming, past
   const [error, setError] = useState('');
   const [cancellingSession, setCancellingSession] = useState(null);
+  const [sessionFeedbacks, setSessionFeedbacks] = useState({}); // Track which sessions have feedback
 
   useEffect(() => {
     fetchSessions();
@@ -23,7 +25,26 @@ export const SessionsList = () => {
     try {
       setLoading(true);
       const response = await sessionService.getMyPatientSessions();
-      setSessions(response.data.data.sessions || []);
+      const sessionData = response.data.data.sessions || [];
+      setSessions(sessionData);
+
+      // Check which completed sessions have feedback
+      const completedSessions = sessionData.filter(s => s.status === 'completed');
+      const feedbackChecks = {};
+      
+      await Promise.all(completedSessions.map(async (session) => {
+        try {
+          const feedbackResponse = await feedbackService.getAllFeedbacks({
+            sessionId: session._id,
+            feedbackType: 'patient-to-therapist'
+          });
+          feedbackChecks[session._id] = feedbackResponse.data.data.feedbacks.length > 0;
+        } catch (err) {
+          feedbackChecks[session._id] = false;
+        }
+      }));
+      
+      setSessionFeedbacks(feedbackChecks);
     } catch (err) {
       setError('Failed to load sessions');
       console.error(err);
@@ -368,13 +389,24 @@ export const SessionsList = () => {
                       </button>
                     )}
 
-                    {session.status === 'completed' && (
+                    {session.status === 'completed' && !sessionFeedbacks[session._id] && (
                       <button
-                        onClick={() => navigate(`/feedback/${session._id}`)}
+                        onClick={() => navigate(
+                          `/give-feedback?type=patient-to-therapist&sessionId=${session._id}&recipientId=${session.therapistId._id}`
+                        )}
                         className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition"
                       >
-                        Leave Feedback
+                        Give Feedback
                       </button>
+                    )}
+                    
+                    {session.status === 'completed' && sessionFeedbacks[session._id] && (
+                      <span className="px-4 py-2 text-sm font-medium text-green-600 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Feedback Given
+                      </span>
                     )}
                   </div>
                 </div>

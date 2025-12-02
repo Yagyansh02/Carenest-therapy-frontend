@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { therapistService } from '../../api/therapist';
+import { supervisorService } from '../../api/supervisor';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { motion } from 'framer-motion';
@@ -9,6 +10,7 @@ import { CheckCircle, XCircle, User, Mail, Award, Calendar, Clock } from 'lucide
 export const ManageTherapists = () => {
   const { user } = useAuth();
   const [therapists, setTherapists] = useState([]);
+  const [supervisorProfile, setSupervisorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all'); // all, verified, pending
@@ -21,9 +23,22 @@ export const ManageTherapists = () => {
   const fetchTherapists = async () => {
     try {
       setLoading(true);
+      
+      // First, get supervisor profile to know their ID
+      const profileResponse = await supervisorService.getMyProfile();
+      const profile = profileResponse.data.data;
+      setSupervisorProfile(profile);
+      
+      // Then fetch all therapists
       const response = await therapistService.getAllTherapists(1, 1000);
-      const therapistsList = response.data.data?.therapists || [];
-      setTherapists(therapistsList);
+      const allTherapists = response.data.data?.therapists || [];
+      
+      // Filter to only show therapists supervised by THIS supervisor
+      const myTherapists = allTherapists.filter(t => 
+        t.supervisorId?._id === profile._id || t.supervisorId === profile._id
+      );
+      
+      setTherapists(myTherapists);
     } catch (error) {
       console.error('Failed to fetch therapists', error);
       setError('Failed to load therapists. Please try again later.');

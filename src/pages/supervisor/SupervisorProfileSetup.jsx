@@ -23,11 +23,21 @@ export const SupervisorProfileSetup = () => {
   useEffect(() => {
     const checkExistingProfile = async () => {
       try {
-        await supervisorService.getMyProfile();
-        // If profile exists, redirect to dashboard
-        navigate('/dashboard');
-      } catch (err) {
+        const response = await supervisorService.getMyProfile();
+        const profile = response.data?.data;
+        
+        // If profile exists and has an ID, redirect to dashboard
+        if (profile && profile._id) {
+          console.log('Profile already exists, redirecting to dashboard');
+          window.location.href = '/dashboard';
+          return;
+        }
+        
         // Profile doesn't exist, continue with setup
+        setCheckingProfile(false);
+      } catch (err) {
+        console.log('No existing profile found, continuing with setup');
+        // Profile doesn't exist (404 or other error), continue with setup
         setCheckingProfile(false);
       }
     };
