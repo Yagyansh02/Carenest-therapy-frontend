@@ -15,15 +15,26 @@ import {
   Edit
 } from 'lucide-react';
 import { therapistService } from '../../api/therapist';
+import { sessionService } from '../../api/session';
 
 export const TherapistDashboardContent = ({ user }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [stats, setStats] = useState({
+    todaySessions: 0,
+    activePatients: 0,
+    pendingAssessments: 0,
+    messages: 0
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchTherapistProfile();
+    fetchStats();
+    
+    // Log for debugging
+    console.log('TherapistDashboard: Fetching profile and stats');
   }, []);
 
   const fetchTherapistProfile = async () => {
@@ -44,6 +55,55 @@ export const TherapistDashboardContent = ({ user }) => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      console.log('Fetching therapist stats...');
+      // Fetch therapist's sessions
+      const sessionsResponse = await sessionService.getMyTherapistSessions();
+      console.log('Sessions response:', sessionsResponse);
+      const allSessions = sessionsResponse.data.data.sessions || [];
+      console.log('Total sessions:', allSessions.length);
+      
+      // Calculate today's sessions
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const todaySessions = allSessions.filter(s => {
+        const sessionDate = new Date(s.scheduledAt);
+        return sessionDate >= today && sessionDate < tomorrow;
+      }).length;
+      
+      // Calculate active patients (unique patients with sessions)
+      const uniquePatients = new Set(
+        allSessions
+          .filter(s => s.patientId && s.status !== 'cancelled' && s.status !== 'rejected')
+          .map(s => s.patientId._id || s.patientId)
+      );
+      const activePatients = uniquePatients.size;
+      
+      // Calculate pending assessments (sessions that are completed but not yet assessed)
+      const pendingAssessments = allSessions.filter(s => 
+        s.status === 'completed' && !s.therapistNotes
+      ).length;
+      
+      const calculatedStats = {
+        todaySessions,
+        activePatients,
+        pendingAssessments,
+        messages: 0 // TODO: Implement messaging system
+      };
+      
+      console.log('Calculated stats:', calculatedStats);
+      setStats(calculatedStats);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      // Keep default stats on error
     }
   };
 
@@ -91,11 +151,12 @@ export const TherapistDashboardContent = ({ user }) => {
     );
   }
 
-  const stats = [
-    { label: 'Today\'s Sessions', value: '8', icon: Calendar, color: 'bg-[#9ECAD6]' },
-    { label: 'Active Patients', value: '24', icon: User, color: 'bg-[#748DAE]' },
-    { label: 'Pending Assessments', value: '6', icon: FileText, color: 'bg-[#F5CBCB]' },
-    { label: 'Messages', value: '12', icon: MessageSquare, color: 'bg-[#9ECAD6]' },
+  // Use stats state for display (will show 0 initially until fetchStats completes)
+  const statsDisplay = [
+    { label: 'Today\'s Sessions', value: stats.todaySessions.toString(), icon: Calendar, color: 'bg-[#9ECAD6]' },
+    { label: 'Active Patients', value: stats.activePatients.toString(), icon: User, color: 'bg-[#748DAE]' },
+    { label: 'Pending Assessments', value: stats.pendingAssessments.toString(), icon: FileText, color: 'bg-[#F5CBCB]' },
+    { label: 'Messages', value: stats.messages.toString(), icon: MessageSquare, color: 'bg-[#9ECAD6]' },
   ];
 
   const getVerificationStatusBadge = () => {
@@ -171,7 +232,7 @@ export const TherapistDashboardContent = ({ user }) => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {statsDisplay.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}

@@ -19,6 +19,9 @@ import { PaymentPage } from '../pages/payment/PaymentPage';
 import { ManageTherapists } from '../pages/supervisor/ManageTherapists';
 import { TherapistProfileView } from '../pages/supervisor/TherapistProfileView';
 import { SupervisorProfileSetup } from '../pages/supervisor/SupervisorProfileSetup';
+import { MyFeedbackPage } from '../pages/feedback/MyFeedbackPage';
+import { GiveFeedbackPage } from '../pages/feedback/GiveFeedbackPage';
+import { PatientFeedbackHistory } from '../pages/feedback/PatientFeedbackHistory';
 
 export const AppRoutes = () => {
   return (
@@ -126,6 +129,30 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <SupervisorProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-feedback"
+          element={
+            <ProtectedRoute>
+              <MyFeedbackPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/give-feedback"
+          element={
+            <ProtectedRoute>
+              <GiveFeedbackPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/feedback-history"
+          element={
+            <ProtectedRoute>
+              <PatientFeedbackHistory />
             </ProtectedRoute>
           }
         />

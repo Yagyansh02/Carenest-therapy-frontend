@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Calendar, MessageSquare, Settings, FileText, Heart } from 'lucide-react';
 import { TherapistDashboardContent } from '../../components/dashboard/TherapistDashboardContent';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { sessionService } from '../../api/session';
 import { assessmentService } from '../../api/assessment';
 import { supervisorService } from '../../api/supervisor';
@@ -251,9 +251,12 @@ const PatientDashboard = ({ user, navigate }) => {
               <p className="font-medium">Take Assessment</p>
               <p className="text-sm opacity-90 mt-1">Complete wellness check-in</p>
             </button>
-            <button className="w-full p-4 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-all hover:shadow-md">
-              <p className="font-medium">View Resources</p>
-              <p className="text-sm opacity-90 mt-1">Access self-help materials</p>
+            <button 
+              onClick={() => navigate('/feedback-history')}
+              className="w-full p-4 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-all hover:shadow-md"
+            >
+              <p className="font-medium">View Feedback History</p>
+              <p className="text-sm opacity-90 mt-1">See all session feedback</p>
             </button>
           </div>
         </motion.div>
@@ -264,83 +267,114 @@ const PatientDashboard = ({ user, navigate }) => {
 
 const SupervisorDashboard = ({ user, navigate }) => {
   const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [supervisorProfile, setSupervisorProfile] = useState(null);
   const [stats, setStats] = useState({
     therapists: 0,
-    totalPatients: 0,
-    pendingReviews: 0,
-    totalSessions: 0
+    pendingReviews: 0
   });
   const [supervisedStudents, setSupervisedStudents] = useState([]);
   const [recentTherapists, setRecentTherapists] = useState([]);
 
-  useEffect(() => {
-    fetchSupervisorData();
-  }, []);
+    useEffect(() => {
+      fetchSupervisorData();
+    }, []);
 
-  const fetchSupervisorData = async () => {
+    // Refresh data when navigating back from other pages
+    useEffect(() => {
+      const refreshOnFocus = () => {
+        if (!document.hidden) {
+          console.log('Page visible again, refreshing supervisor data...');
+          fetchSupervisorData(true);
+        }
+      };
+
+      window.addEventListener('focus', refreshOnFocus);
+      document.addEventListener('visibilitychange', refreshOnFocus);
+
+      return () => {
+        window.removeEventListener('focus', refreshOnFocus);
+        document.removeEventListener('visibilitychange', refreshOnFocus);
+      };
+    }, []);    const fetchSupervisorData = async (forceRefresh = false) => {
+      if (forceRefresh) {
+        console.log('Force refreshing supervisor data...');
+      }
     try {
       setLoading(true);
+      let currentProfileId = null;
 
-      // Fetch supervisor profile to get supervised students
+      // Fetch supervisor profile to get supervised students - DO THIS FIRST
       try {
         const profileResponse = await supervisorService.getMyProfile();
         const profile = profileResponse.data.data;
+        
+        // Check if profile exists
+        if (!profile || !profile._id) {
+          console.log('No supervisor profile found - redirecting to setup');
+          setRedirecting(true);
+          navigate('/supervisor/profile-setup');
+          return;
+        }
+        
         setSupervisorProfile(profile);
+        currentProfileId = profile._id;
         const students = profile.supervisedStudents || [];
         setSupervisedStudents(students);
       } catch (err) {
         console.error('Error fetching supervisor profile:', err);
-        // Only redirect if it's a 404 (profile not found), not other errors
-        if (err.response?.status === 404) {
-          console.log('No supervisor profile found - redirecting to setup');
-          navigate('/supervisor/profile-setup');
-          return;
-        }
-        // For other errors, continue loading with empty data
-        console.log('Continuing with empty supervisor data');
+        // Redirect to setup for any error (404, 500, etc.) - profile doesn't exist or can't be fetched
+        console.log('Supervisor profile error - redirecting to setup');
+        setRedirecting(true);
+        navigate('/supervisor/profile-setup');
+        return;
       }
 
       // Fetch all therapists
       const therapistsResponse = await therapistService.getAllTherapists(1, 1000);
       const allTherapists = therapistsResponse.data.data.therapists || [];
       
-      // Get recently created therapists (last 5)
-      const sortedTherapists = [...allTherapists].sort((a, b) => 
-        new Date(b.createdAt) - new Date(a.createdAt)
+      // Filter to only show therapists supervised by THIS supervisor
+      const myTherapists = allTherapists.filter(t => {
+        if (!t.supervisorId) return false;
+        const therapistSupervisorId = typeof t.supervisorId === 'object' ? t.supervisorId?._id : t.supervisorId;
+        return therapistSupervisorId === currentProfileId;
+      });
+
+      // Filter for students under this supervisor
+      const myStudents = myTherapists.filter(t => t.isStudent);
+      setSupervisedStudents(myStudents);
+
+      // Filter for independent therapists (not students) who are pending verification
+      // These can be verified by ANY supervisor
+      const pendingIndependentTherapists = allTherapists.filter(t => 
+        !t.isStudent && t.verificationStatus === 'pending'
       );
-      setRecentTherapists(sortedTherapists.slice(0, 5));
+      
+      // Combine relevant therapists for Recent Activity
+      // Show my therapists AND any pending independent therapists
+      const relevantTherapists = [...myTherapists, ...pendingIndependentTherapists];
 
-      // Count verified therapists
-      const verifiedTherapists = allTherapists.filter(t => t.verificationStatus === 'verified').length;
+      // Get recently updated therapists
+      const sortedTherapists = relevantTherapists.sort((a, b) => 
+        new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)
+      );
+      
+      // Remove duplicates if any (though sets should be disjoint)
+      const uniqueRecentTherapists = Array.from(new Map(sortedTherapists.map(item => [item._id, item])).values());
+      setRecentTherapists(uniqueRecentTherapists.slice(0, 5));
 
-      // Fetch all users to count patients
-      let totalPatients = 0;
-      try {
-        const usersResponse = await api.get('/users?limit=1000');
-        const allUsers = usersResponse.data.data.users || [];
-        totalPatients = allUsers.filter(u => u.role === 'patient').length;
-      } catch (err) {
-        console.log('Could not fetch users');
-      }
+      // Count verified therapists supervised by this supervisor
+      const verifiedTherapists = myTherapists.filter(t => t.verificationStatus === 'verified').length;
 
-      // Fetch all sessions to count total
-      let totalSessions = 0;
-      try {
-        const sessionsResponse = await api.get('/sessions/all?limit=1');
-        totalSessions = sessionsResponse.data.data.pagination?.totalSessions || 0;
-      } catch (err) {
-        console.log('Could not fetch sessions');
-      }
-
-      // Calculate pending reviews (unverified therapists)
-      const pendingReviews = allTherapists.filter(t => t.verificationStatus === 'pending').length;
+      // Calculate pending reviews 
+      // (unverified therapists supervised by THIS supervisor + unverified independent therapists)
+      const myPendingReviews = myTherapists.filter(t => t.verificationStatus === 'pending').length;
+      const totalPendingReviews = myPendingReviews + pendingIndependentTherapists.length;
 
       setStats({
         therapists: verifiedTherapists,
-        totalPatients,
-        pendingReviews,
-        totalSessions
+        pendingReviews: totalPendingReviews
       });
 
     } catch (error) {
@@ -372,11 +406,23 @@ const SupervisorDashboard = ({ user, navigate }) => {
   };
 
   const dashboardStats = [
-    { label: 'Therapists', value: loading ? '...' : stats.therapists.toString(), icon: User, color: 'bg-[#9ECAD6]' },
-    { label: 'Total Patients', value: loading ? '...' : stats.totalPatients.toString(), icon: Heart, color: 'bg-[#748DAE]' },
+    { label: 'Supervised Therapists', value: loading ? '...' : (stats.therapists + stats.pendingReviews).toString(), icon: User, color: 'bg-[#9ECAD6]' },
+    { label: 'Verified Therapists', value: loading ? '...' : stats.therapists.toString(), icon: Heart, color: 'bg-[#748DAE]' },
     { label: 'Pending Reviews', value: loading ? '...' : stats.pendingReviews.toString(), icon: FileText, color: 'bg-[#F5CBCB]' },
-    { label: 'Reports', value: loading ? '...' : stats.totalSessions.toString(), icon: Settings, color: 'bg-[#9ECAD6]' },
+    { label: 'Total Students', value: loading ? '...' : supervisedStudents.length.toString(), icon: Settings, color: 'bg-[#9ECAD6]' },
   ];
+
+  // Show redirecting state if profile doesn't exist
+  if (redirecting) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-secondary-600">Redirecting to profile setup...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -389,16 +435,16 @@ const SupervisorDashboard = ({ user, navigate }) => {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold mb-1">Your Supervisor Profile ID</h3>
-              <p className="text-sm opacity-90 mb-3">Share this ID with student therapists who want to link to you</p>
+              <h3 className="text-lg font-semibold mb-1">Your Professional License Number</h3>
+              <p className="text-sm opacity-90 mb-3">Share this number with student therapists to link them to your supervision</p>
               <div className="flex items-center gap-3">
                 <code className="bg-white/20 px-4 py-2 rounded font-mono text-lg tracking-wide">
-                  {supervisorProfile._id}
+                  {supervisorProfile.professionalLicenseNumber}
                 </code>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(supervisorProfile._id);
-                    alert('Supervisor ID copied to clipboard!');
+                    navigator.clipboard.writeText(supervisorProfile.professionalLicenseNumber);
+                    alert('Professional License Number copied to clipboard!');
                   }}
                   className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded transition-colors"
                 >
@@ -448,12 +494,27 @@ const SupervisorDashboard = ({ user, navigate }) => {
               {recentTherapists.map((therapist) => (
                 <div key={therapist._id} className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-900">
-                    New therapist onboarded: {therapist.userId?.fullName || 'Unknown'}
+                    {therapist.verificationStatus === 'verified' 
+                      ? `Therapist verified: ${therapist.userId?.fullName || 'Unknown'}`
+                      : `New therapist onboarded: ${therapist.userId?.fullName || 'Unknown'}`
+                    }
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">{getTimeAgo(therapist.createdAt)}</p>
+                  <p className="text-xs text-gray-500 mt-1">{getTimeAgo(therapist.updatedAt || therapist.createdAt)}</p>
                   {therapist.verificationStatus === 'pending' && (
-                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
-                      Pending Verification
+                    <div className="flex gap-2 mt-2">
+                      <span className="inline-block px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                        Pending Verification
+                      </span>
+                      {!therapist.isStudent && (
+                        <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                          Independent
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {therapist.verificationStatus === 'verified' && (
+                    <span className="inline-block mt-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                      Verified
                     </span>
                   )}
                 </div>
@@ -503,10 +564,10 @@ const SupervisorDashboard = ({ user, navigate }) => {
                   <div key={student._id} className="flex items-center gap-2 text-sm">
                     <div className="w-8 h-8 bg-[#9ECAD6] rounded-full flex items-center justify-center">
                       <span className="text-white font-medium text-xs">
-                        {student.fullName?.charAt(0) || 'S'}
+                        {student.userId?.fullName?.charAt(0) || 'S'}
                       </span>
                     </div>
-                    <span className="text-gray-700">{student.fullName || student.email}</span>
+                    <span className="text-gray-700">{student.userId?.fullName || student.userId?.email || 'Unknown Student'}</span>
                   </div>
                 ))}
                 {supervisedStudents.length > 3 && (
