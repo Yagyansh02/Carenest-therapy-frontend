@@ -36,6 +36,7 @@ import {
 } from 'recharts';
 import ReactCalendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import { PatientAssessmentButton } from './PatientAssessmentButton';
 import { therapistService } from '../../api/therapist';
 import { sessionService } from '../../api/session';
 
@@ -636,6 +637,14 @@ export const TherapistDashboardContent = ({ user }) => {
                         <p className="font-semibold text-gray-900 text-sm">
                           {session.patientId?.fullName || 'Unknown Patient'}
                         </p>
+                        {session.patientId && (
+                          <div className="mt-1 mb-1">
+                            <PatientAssessmentButton 
+                              patientId={session.patientId._id} 
+                              patientName={session.patientId.fullName} 
+                            />
+                          </div>
+                        )}
                         <p className="text-xs text-gray-600">
                           {new Date(session.scheduledAt).toLocaleTimeString('en-US', {
                             hour: '2-digit',

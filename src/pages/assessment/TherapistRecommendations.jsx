@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import { assessmentService } from '../../api/assessment';
+import { AssessmentPDF } from '../../components/assessment/AssessmentPDF';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 
@@ -9,23 +11,29 @@ export const TherapistRecommendations = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [recommendations, setRecommendations] = useState([]);
+  const [assessment, setAssessment] = useState(null);
 
   useEffect(() => {
-    fetchRecommendations();
-  }, []);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [recResponse, assessResponse] = await Promise.all([
+          assessmentService.getRecommendedTherapists(),
+          assessmentService.getMyAssessment()
+        ]);
+        
+        setRecommendations(recResponse.data?.data?.recommendations || []);
+        setAssessment(assessResponse.data?.data?.answers);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError(err.response?.data?.message || 'Failed to load recommendations. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchRecommendations = async () => {
-    try {
-      setLoading(true);
-      const response = await assessmentService.getRecommendedTherapists();
-      setRecommendations(response.data?.data?.recommendations || []);
-    } catch (err) {
-      console.error('Error fetching recommendations:', err);
-      setError(err.response?.data?.message || 'Failed to load recommendations. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchData();
+  }, []);
 
   const getMatchPercentage = (score) => {
     // Convert score (0-100) to percentage
@@ -117,9 +125,28 @@ export const TherapistRecommendations = () => {
           <h1 className="text-4xl font-bold text-secondary-900 mb-4">
             Your Recommended Therapists
           </h1>
-          <p className="text-xl text-secondary-600">
+          <p className="text-xl text-secondary-600 mb-6">
             Based on your assessment, we've found {recommendations.length} therapist{recommendations.length !== 1 ? 's' : ''} who match your needs
           </p>
+          
+          {assessment && (
+            <div className="flex justify-center">
+              <PDFDownloadLink
+                document={<AssessmentPDF assessment={assessment} />}
+                fileName="my-assessment-results.pdf"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+              >
+                {({ loading }) => (
+                  <>
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {loading ? 'Generating PDF...' : 'Download Assessment Results'}
+                  </>
+                )}
+              </PDFDownloadLink>
+            </div>
+          )}
         </div>
 
         {/* Recommendations Grid */}
