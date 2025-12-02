@@ -7,7 +7,7 @@ export const Profile = () => {
   const { user } = useAuth();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 pt-24 pb-8 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-bold text-secondary-900">Profile Settings</h1>
       
       <Card className="mt-8 p-6">

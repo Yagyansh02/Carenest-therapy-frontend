@@ -29,7 +29,7 @@ export const TherapistList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-20">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
@@ -37,7 +37,7 @@ export const TherapistList = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-20">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <Button onClick={() => window.location.reload()}>Retry</Button>
@@ -48,7 +48,7 @@ export const TherapistList = () => {
 
   if (therapists.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 pt-24 pb-8 sm:px-6 lg:px-8">
         <h1 className="mb-8 text-3xl font-bold text-secondary-900">Find a Therapist</h1>
         <div className="text-center py-12">
           <p className="text-secondary-600">No therapists available at the moment.</p>
@@ -58,7 +58,7 @@ export const TherapistList = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 pt-24 pb-8 sm:px-6 lg:px-8">
       <h1 className="mb-8 text-3xl font-bold text-secondary-900">Find a Therapist</h1>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {therapists.map((therapist) => (
