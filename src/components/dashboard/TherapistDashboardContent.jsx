@@ -201,7 +201,7 @@ export const TherapistDashboardContent = ({ user }) => {
     },
     { 
       label: 'Total Revenue', 
-      value: `$${statistics?.totalRevenue?.toFixed(0) || 0}`, 
+      value: `Rs ${statistics?.totalRevenue?.toFixed(0) || 0}`, 
       icon: TrendingUp, 
       color: 'bg-[#748DAE]',
       subtext: 'from completed sessions'
@@ -277,7 +277,7 @@ export const TherapistDashboardContent = ({ user }) => {
                 <DollarSign className="h-5 w-5" />
                 <div>
                   <p className="text-white/70 text-sm">Session Rate</p>
-                  <p className="font-semibold">${profile?.sessionRate || 0}/session</p>
+                  <p className="font-semibold">Rs {profile?.sessionRate || 0}/session</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -519,12 +519,12 @@ export const TherapistDashboardContent = ({ user }) => {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="p-4 bg-gradient-to-r from-[#9ECAD6]/20 to-[#9ECAD6]/30 rounded-lg">
                 <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-[#748DAE]">${statistics?.totalRevenue?.toFixed(2) || '0.00'}</p>
+                <p className="text-2xl font-bold text-[#748DAE]">Rs {statistics?.totalRevenue?.toFixed(2) || '0.00'}</p>
               </div>
               <div className="p-4 bg-gradient-to-r from-[#748DAE]/20 to-[#748DAE]/30 rounded-lg">
                 <p className="text-sm text-gray-600">Avg per Session</p>
                 <p className="text-2xl font-bold text-[#748DAE]">
-                  ${statistics?.completedSessions > 0 
+                  Rs {statistics?.completedSessions > 0 
                     ? (statistics.totalRevenue / statistics.completedSessions).toFixed(2) 
                     : '0.00'}
                 </p>
