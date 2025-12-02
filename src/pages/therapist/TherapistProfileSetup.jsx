@@ -224,7 +224,7 @@ export const TherapistProfileSetup = () => {
             {formData.isStudent && (
               <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-200">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Supervisor ID *
+                  Supervisor Profile ID *
                 </label>
                 <Input
                   type="text"
@@ -232,9 +232,12 @@ export const TherapistProfileSetup = () => {
                   value={formData.supervisorId}
                   onChange={handleInputChange}
                   required={formData.isStudent}
-                  placeholder="Your supervisor's ID"
+                  placeholder="Enter your supervisor's Profile ID (not User ID)"
                 />
-                <p className="text-xs text-gray-600 mt-2">Contact your supervisor to get their ID</p>
+                <p className="text-xs text-gray-600 mt-2">
+                  ⚠️ <strong>Important:</strong> Ask your supervisor for their <strong>Supervisor Profile ID</strong> (not their User ID). 
+                  They can find this in their dashboard after completing their supervisor profile.
+                </p>
               </div>
             )}
 
