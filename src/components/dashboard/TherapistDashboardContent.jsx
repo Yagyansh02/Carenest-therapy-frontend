@@ -278,23 +278,34 @@ export const TherapistDashboardContent = ({ user }) => {
             animate={{ opacity: 1, x: 0 }}
             className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
           >
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Today's Schedule</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Sessions Overview</h3>
+              <button
+                onClick={() => navigate('/therapist/sessions')}
+                className="text-sm text-[#748DAE] hover:text-[#657B9D] font-medium"
+              >
+                View All →
+              </button>
+            </div>
             <div className="space-y-3">
-              {[
-                { patient: 'John Doe', time: '9:00 AM', type: 'Initial Consultation' },
-                { patient: 'Jane Smith', time: '10:30 AM', type: 'Follow-up Session' },
-                { patient: 'Robert Brown', time: '2:00 PM', type: 'Group Therapy' },
-              ].map((session, index) => (
-                <div key={index} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-gray-900">{session.patient}</p>
-                      <p className="text-xs text-[#748DAE] mt-1">{session.type}</p>
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">{session.time}</p>
-                  </div>
-                </div>
-              ))}
+              <div className="p-4 bg-gradient-to-r from-[#9ECAD6]/20 to-[#748DAE]/20 rounded-lg">
+                <p className="text-2xl font-bold text-gray-900">
+                  {profile?.todaySessions || 0}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">Sessions Today</p>
+              </div>
+              <div className="p-4 bg-yellow-50 rounded-lg">
+                <p className="text-2xl font-bold text-gray-900">
+                  {profile?.pendingPayments || 0}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">Pending Payments</p>
+              </div>
+              <button
+                onClick={() => navigate('/therapist/sessions')}
+                className="w-full p-3 bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-colors font-medium"
+              >
+                Manage Sessions
+              </button>
             </div>
           </motion.div>
 
@@ -306,17 +317,23 @@ export const TherapistDashboardContent = ({ user }) => {
           >
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full p-3 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-colors flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="font-medium">View All Patients</span>
+              <button
+                onClick={() => navigate('/therapist/sessions?filter=pending')}
+                className="w-full p-3 text-left bg-gradient-to-r from-[#9ECAD6] to-[#748DAE] hover:from-[#8BB9C5] hover:to-[#657B9D] text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="font-medium">Manage Sessions</span>
               </button>
               <button className="w-full p-3 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-colors flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 <span className="font-medium">Review Assessments</span>
               </button>
-              <button className="w-full p-3 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-colors flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                <span className="font-medium">Session Notes</span>
+              <button
+                onClick={() => navigate('/profile')}
+                className="w-full p-3 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                <span className="font-medium">Edit Profile</span>
               </button>
             </div>
           </motion.div>

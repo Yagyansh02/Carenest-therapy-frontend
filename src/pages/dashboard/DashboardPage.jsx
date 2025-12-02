@@ -106,6 +106,13 @@ const PatientDashboard = ({ user, navigate }) => {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="space-y-3">
             <button 
+              onClick={() => navigate('/sessions')}
+              className="w-full p-4 text-left bg-gradient-to-r from-[#9ECAD6] to-[#748DAE] hover:from-[#8BB9C5] hover:to-[#657B9D] text-white rounded-lg transition-all hover:shadow-md"
+            >
+              <p className="font-medium">View My Sessions</p>
+              <p className="text-sm opacity-90 mt-1">Manage your appointments</p>
+            </button>
+            <button 
               onClick={() => navigate('/therapists')}
               className="w-full p-4 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-all hover:shadow-md"
             >
