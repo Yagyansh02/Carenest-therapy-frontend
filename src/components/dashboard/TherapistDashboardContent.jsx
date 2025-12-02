@@ -15,7 +15,8 @@ import {
   XCircle,
   UserCheck,
   BarChart3,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  MessageSquare
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -39,6 +40,7 @@ import 'react-calendar/dist/Calendar.css';
 import { PatientAssessmentButton } from './PatientAssessmentButton';
 import { therapistService } from '../../api/therapist';
 import { sessionService } from '../../api/session';
+import api from '../../api/axios';
 
 export const TherapistDashboardContent = ({ user }) => {
   const [profile, setProfile] = useState(null);
@@ -96,7 +98,21 @@ export const TherapistDashboardContent = ({ user }) => {
         }),
       ]);
 
-      setProfile(profileRes.data.data);
+      const profileData = profileRes.data.data;
+      
+      // If averageRating is 0, try to get it from feedback stats
+      if (profileData.averageRating === 0) {
+        try {
+          const feedbackStatsRes = await api.get(`/feedbacks/stats/${profileData.userId._id}`);
+          if (feedbackStatsRes.data.data.averageRating > 0) {
+            profileData.averageRating = feedbackStatsRes.data.data.averageRating;
+          }
+        } catch (err) {
+          console.log('Could not fetch feedback stats for rating');
+        }
+      }
+
+      setProfile(profileData);
       setStatistics(statsRes.data.data);
       setTodaySessions(todaySessionsRes.data.data.sessions || []);
       setPendingSessions(pendingSessionsRes.data.data.sessions || []);
@@ -528,6 +544,25 @@ export const TherapistDashboardContent = ({ user }) => {
                   <Area type="monotone" dataKey="revenue" stroke="#748DAE" fill="#9ECAD6" />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
+
+            {/* View Feedback History Button */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <button
+                onClick={() => navigate('/my-feedback')}
+                className="w-full p-4 bg-gradient-to-r from-[#F5CBCB] to-[#E4BABA] hover:from-[#E4BABA] hover:to-[#D3A9A9] text-white rounded-lg transition-all hover:shadow-md flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                    <MessageSquare className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-sm">View Feedback History</p>
+                    <p className="text-xs text-white/90">See all session feedback</p>
+                  </div>
+                </div>
+                <div className="text-white/80 group-hover:text-white transition-colors">→</div>
+              </button>
             </div>
           </motion.div>
         </div>

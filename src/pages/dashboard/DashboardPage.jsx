@@ -14,6 +14,13 @@ export const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   const getDashboardContent = () => {
     switch (user?.role) {
       case 'patient':
@@ -22,6 +29,9 @@ export const DashboardPage = () => {
         return <TherapistDashboardContent user={user} />;
       case 'supervisor':
         return <SupervisorDashboard user={user} navigate={navigate} />;
+      case 'admin':
+        // Will redirect via useEffect
+        return null;
       default:
         return <DefaultDashboard user={user} />;
     }
@@ -542,7 +552,7 @@ const SupervisorDashboard = ({ user, navigate }) => {
               <p className="font-medium">Manage Therapists</p>
             </button>
             <button 
-              onClick={() => alert('Reports feature coming soon!')}
+              onClick={() => navigate('/supervisor/reports')}
               className="w-full p-4 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-colors"
             >
               <p className="font-medium">View Reports</p>
