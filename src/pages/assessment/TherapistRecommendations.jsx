@@ -49,7 +49,7 @@ export const TherapistRecommendations = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pt-24 pb-12 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -62,7 +62,7 @@ export const TherapistRecommendations = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pt-24 pb-12 px-4">
         <div className="max-w-6xl mx-auto">
           <Card className="p-8 text-center">
             <div className="text-red-600 mb-4">
@@ -86,7 +86,7 @@ export const TherapistRecommendations = () => {
 
   if (recommendations.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pt-24 pb-12 px-4">
         <div className="max-w-6xl mx-auto">
           <Card className="p-8 text-center">
             <div className="text-secondary-400 mb-4">
@@ -118,7 +118,7 @@ export const TherapistRecommendations = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pt-24 pb-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

@@ -24,11 +24,11 @@ export const TherapistDetail = () => {
     fetchTherapist();
   }, [id]);
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (!therapist) return <div className="p-8 text-center">Therapist not found</div>;
+  if (loading) return <div className="pt-24 pb-8 text-center">Loading...</div>;
+  if (!therapist) return <div className="pt-24 pb-8 text-center">Therapist not found</div>;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 pt-24 pb-8 sm:px-6 lg:px-8">
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Card className="p-8">

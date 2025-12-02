@@ -45,7 +45,7 @@ export const TherapistProfileView = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 pt-20">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
@@ -53,7 +53,7 @@ export const TherapistProfileView = () => {
 
   if (error || !therapist) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 pt-20">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error || 'Therapist not found'}</p>
           <Button onClick={() => navigate('/supervisor/manage-therapists')}>
@@ -65,7 +65,7 @@ export const TherapistProfileView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pt-24 pb-12 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Back Button */}
         <motion.button

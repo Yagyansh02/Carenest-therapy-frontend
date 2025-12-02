@@ -85,7 +85,7 @@ export const MyFeedbackPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pt-24 pb-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
