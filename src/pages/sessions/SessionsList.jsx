@@ -239,14 +239,14 @@ export const SessionsList = () => {
                       {/* Therapist Avatar */}
                       <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-lg font-bold text-primary-700">
-                          {session.therapistId?.userId?.fullName?.charAt(0) || 'T'}
+                          {session.therapistId?.fullName?.charAt(0) || 'T'}
                         </span>
                       </div>
 
                       {/* Details */}
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-secondary-900">
-                          {session.therapistId?.userId?.fullName || 'Therapist'}
+                          {session.therapistId?.fullName || 'Therapist'}
                         </h3>
                         
                         <div className="mt-2 space-y-1">

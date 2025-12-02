@@ -16,6 +16,8 @@ import { SessionsList } from '../pages/sessions/SessionsList';
 import { AssessmentForm } from '../pages/assessment/AssessmentForm';
 import { TherapistRecommendations } from '../pages/assessment/TherapistRecommendations';
 import { PaymentPage } from '../pages/payment/PaymentPage';
+import { ManageTherapists } from '../pages/supervisor/ManageTherapists';
+import { TherapistProfileView } from '../pages/supervisor/TherapistProfileView';
 
 export const AppRoutes = () => {
   return (
@@ -99,6 +101,22 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <PaymentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/supervisor/manage-therapists"
+          element={
+            <ProtectedRoute>
+              <ManageTherapists />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/supervisor/therapist/:id"
+          element={
+            <ProtectedRoute>
+              <TherapistProfileView />
             </ProtectedRoute>
           }
         />
