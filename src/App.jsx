@@ -5,6 +5,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store/store';
 import { AuthProvider } from './context/AuthContext';
 import { AppRoutes } from './routes/AppRoutes';
+import { ScrollToTop } from './components/ScrollToTop';
 import { initSecurity } from './utils/security';
 import { logger } from './utils/logger';
 import { env } from './config/env';
@@ -25,6 +26,7 @@ function App() {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter>
+          <ScrollToTop />
           <AuthProvider>
             <AppRoutes />
           </AuthProvider>
