@@ -1,33 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { X, FileText, User, Briefcase, Activity, Calendar, AlertCircle } from 'lucide-react';
-import { assessmentService } from '../../api/assessment';
 import { AssessmentPDF } from '../assessment/AssessmentPDF';
+import {
+  fetchAssessmentByPatientId,
+  clearPatientAssessment,
+  selectPatientAssessment,
+  selectLoading,
+  selectError,
+} from '../../store/slices/assessmentSlice';
 
 export const PatientAssessmentModal = ({ isOpen, onClose, patientId, patientName }) => {
-  const [assessment, setAssessment] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const assessment = useSelector(selectPatientAssessment);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
 
   useEffect(() => {
     if (isOpen && patientId) {
-      fetchAssessment();
+      dispatch(fetchAssessmentByPatientId(patientId));
     }
-  }, [isOpen, patientId]);
-
-  const fetchAssessment = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await assessmentService.getAssessmentByPatientId(patientId);
-      setAssessment(response.data.data);
-    } catch (err) {
-      console.error("Error fetching assessment:", err);
-      setError("No assessment found for this patient");
-    } finally {
-      setLoading(false);
-    }
-  };
+    
+    // Cleanup when modal closes
+    return () => {
+      if (!isOpen) {
+        dispatch(clearPatientAssessment());
+      }
+    };
+  }, [isOpen, patientId, dispatch]);
 
   if (!isOpen) return null;
 
@@ -67,20 +68,20 @@ export const PatientAssessmentModal = ({ isOpen, onClose, patientId, patientName
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {loading && (
+          {loading.fetch && (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
           )}
 
-          {error && (
+          {error.fetch && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
               <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-3" />
-              <p className="text-red-800 font-medium">{error}</p>
+              <p className="text-red-800 font-medium">{error.fetch}</p>
             </div>
           )}
 
-          {!loading && !error && assessment && (
+          {!loading.fetch && !error.fetch && assessment && (
             <div className="space-y-6">
               {/* Demographics Section */}
               <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">

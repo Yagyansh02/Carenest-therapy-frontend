@@ -1,39 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { PDFDownloadLink } from '@react-pdf/renderer';
-import { assessmentService } from '../../api/assessment';
 import { AssessmentPDF } from '../../components/assessment/AssessmentPDF';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import {
+  fetchRecommendedTherapists,
+  fetchMyAssessment,
+  selectRecommendations,
+  selectFormData,
+  selectLoading,
+  selectError,
+} from '../../store/slices/assessmentSlice';
 
 export const TherapistRecommendations = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [recommendations, setRecommendations] = useState([]);
-  const [assessment, setAssessment] = useState(null);
+  const dispatch = useDispatch();
+  
+  // Redux state
+  const recommendations = useSelector(selectRecommendations);
+  const assessment = useSelector(selectFormData);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        const [recResponse, assessResponse] = await Promise.all([
-          assessmentService.getRecommendedTherapists(),
-          assessmentService.getMyAssessment()
+        await Promise.all([
+          dispatch(fetchRecommendedTherapists()).unwrap(),
+          dispatch(fetchMyAssessment()).unwrap(),
         ]);
-        
-        setRecommendations(recResponse.data?.data?.recommendations || []);
-        setAssessment(assessResponse.data?.data?.answers);
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError(err.response?.data?.message || 'Failed to load recommendations. Please try again.');
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [dispatch]);
 
   const getMatchPercentage = (score) => {
     // Convert score (0-100) to percentage
@@ -47,7 +51,11 @@ export const TherapistRecommendations = () => {
     return 'text-orange-600 bg-orange-50';
   };
 
-  if (loading) {
+  const handleRetry = () => {
+    dispatch(fetchRecommendedTherapists());
+  };
+
+  if (loading.recommendations || loading.fetch) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pt-24 pb-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -60,7 +68,7 @@ export const TherapistRecommendations = () => {
     );
   }
 
-  if (error) {
+  if (error.recommendations) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 pt-24 pb-12 px-4">
         <div className="max-w-6xl mx-auto">
@@ -71,9 +79,9 @@ export const TherapistRecommendations = () => {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-secondary-900 mb-2">Oops! Something went wrong</h2>
-            <p className="text-secondary-600 mb-6">{error}</p>
+            <p className="text-secondary-600 mb-6">{error.recommendations}</p>
             <div className="space-x-4">
-              <Button onClick={fetchRecommendations}>Try Again</Button>
+              <Button onClick={handleRetry}>Try Again</Button>
               <Button variant="outline" onClick={() => navigate('/assessment')}>
                 Retake Assessment
               </Button>

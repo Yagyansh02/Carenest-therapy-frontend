@@ -60,6 +60,13 @@ export const validateFullName = (name) => {
       error: 'Full name must be at least 2 characters long' 
     };
   }
+
+  if (/\d/.test(name)) {
+    return {
+      isValid: false,
+      error: 'Full name cannot contain numbers'
+    };
+  }
   
   // Check if name contains at least one space (first and last name)
   if (!name.trim().includes(' ')) {

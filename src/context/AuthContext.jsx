@@ -7,6 +7,7 @@ import {
   getCurrentUserData,
   clearError,
 } from '../store/slices/authSlice';
+import { resetAssessmentState } from '../store/slices/assessmentSlice';
 
 const AuthContext = createContext();
 
@@ -34,6 +35,8 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     const result = await dispatch(registerUser(userData));
     if (registerUser.fulfilled.match(result)) {
+      // Clear any existing assessment state for new user
+      dispatch(resetAssessmentState());
       return result.payload;
     }
     // Create error object with proper message
@@ -44,6 +47,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await dispatch(logoutUser());
+    // Clear assessment state on logout to prevent data from persisting to next user
+    dispatch(resetAssessmentState());
   };
 
   const clearAuthError = () => {
