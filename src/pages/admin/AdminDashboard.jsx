@@ -38,6 +38,7 @@ export const AdminDashboard = () => {
     totalPatients: 0,
     totalTherapists: 0,
     totalSupervisors: 0,
+    totalColleges: 0,
     totalSessions: 0,
     completedSessions: 0,
     pendingSessions: 0,
@@ -87,6 +88,7 @@ export const AdminDashboard = () => {
       const patients = allUsers.filter(u => u.role === 'patient');
       const therapists = allUsers.filter(u => u.role === 'therapist');
       const supervisors = allUsers.filter(u => u.role === 'supervisor');
+      const colleges = allUsers.filter(u => u.role === 'college');
       const completedSessions = allSessions.filter(s => s.status === 'completed');
       const pendingSessions = allSessions.filter(s => s.status === 'pending' || s.status === 'confirmed');
       const verifiedTherapists = allTherapists.filter(t => t.verificationStatus === 'verified');
@@ -102,6 +104,7 @@ export const AdminDashboard = () => {
         totalPatients: patients.length,
         totalTherapists: therapists.length,
         totalSupervisors: supervisors.length,
+        totalColleges: colleges.length,
         totalSessions: allSessions.length,
         completedSessions: completedSessions.length,
         pendingSessions: pendingSessions.length,
@@ -137,7 +140,8 @@ export const AdminDashboard = () => {
     const userGrowth = [
       { name: 'Patients', count: users.filter(u => u.role === 'patient').length, color: '#9ECAD6' },
       { name: 'Therapists', count: users.filter(u => u.role === 'therapist').length, color: '#748DAE' },
-      { name: 'Supervisors', count: users.filter(u => u.role === 'supervisor').length, color: '#F5CBCB' }
+      { name: 'Supervisors', count: users.filter(u => u.role === 'supervisor').length, color: '#F5CBCB' },
+      { name: 'Colleges', count: users.filter(u => u.role === 'college').length, color: '#A8D5BA' }
     ];
 
     // Sessions over time (last 7 days)
@@ -194,6 +198,7 @@ export const AdminDashboard = () => {
           totalPatients: deletedUser.role === 'patient' ? prevStats.totalPatients - 1 : prevStats.totalPatients,
           totalTherapists: deletedUser.role === 'therapist' ? prevStats.totalTherapists - 1 : prevStats.totalTherapists,
           totalSupervisors: deletedUser.role === 'supervisor' ? prevStats.totalSupervisors - 1 : prevStats.totalSupervisors,
+          totalColleges: deletedUser.role === 'college' ? prevStats.totalColleges - 1 : prevStats.totalColleges,
         }));
       }
       
@@ -441,7 +446,13 @@ export const AdminDashboard = () => {
             <BarChart data={chartData.therapistsBySpecialization} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
-              <YAxis dataKey="name" type="category" width={110} />
+              <YAxis
+                dataKey="name"
+                type="category"
+                width={120}
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => value.length > 15 ? value.substring(0, 15) + '...' : value}
+              />
               <Tooltip />
               <Bar dataKey="value" fill="#748DAE" radius={[0, 4, 4, 0]} />
             </BarChart>

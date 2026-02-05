@@ -736,12 +736,6 @@ const SupervisorDashboard = ({ user, navigate }) => {
             >
               <p className="font-medium">View Reports</p>
             </button>
-            <button 
-              onClick={() => alert('Settings feature coming soon!')}
-              className="w-full p-4 text-left bg-[#F5CBCB] hover:bg-[#E4BABA] text-white rounded-lg transition-colors"
-            >
-              <p className="font-medium">System Settings</p>
-            </button>
           </div>
 
           {/* Supervised Students Section */}

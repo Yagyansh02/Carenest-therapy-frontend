@@ -130,8 +130,8 @@ export const LoginPage = () => {
       errors.fullName = 'Full name is required';
     } else if (registerData.fullName.trim().length < 2) {
       errors.fullName = 'Full name must be at least 2 characters';
-    } else if (/\d/.test(registerData.fullName)) {
-      errors.fullName = 'Full name cannot contain numbers';
+    } else if (!/^[a-zA-Z\s]+$/.test(registerData.fullName.trim())) {
+      errors.fullName = 'Full name can only contain letters and spaces';
     }
 
     if (!registerData.email.trim()) {
