@@ -9,24 +9,29 @@ import {
   Activity,
   Star,
   DollarSign,
-  Trash2,
-  Search,
-  Filter,
   BarChart3,
   PieChart,
-  AlertTriangle,
   CheckCircle,
   XCircle,
-  Loader2
+  Loader2,
+  LayoutDashboard
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { userService } from '../../api/user';
+import { LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { therapistService } from '../../api/therapist';
 import { sessionService } from '../../api/session';
 import { feedbackService } from '../../api/feedback';
 import api from '../../api/axios';
+import { UserManagement } from './UserManagement';
+
+// ─── Tab definitions ──────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'overview',  label: 'Overview',        icon: LayoutDashboard },
+  { id: 'analytics', label: 'Analytics',        icon: BarChart3 },
+  { id: 'users',     label: 'User Management',  icon: Users },
+];
 
 export const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -42,19 +47,17 @@ export const AdminDashboard = () => {
     verifiedTherapists: 0,
     pendingTherapists: 0
   });
-  
+
   const [chartData, setChartData] = useState({
     sessionsOverTime: [],
     userGrowth: [],
     sessionsByStatus: [],
-    therapistsBySpecialization: [],
-    revenueOverTime: []
+    therapistsBySpecialization: []
   });
 
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
+
+  // User management modal state (lifted so UserManagement component can use it)
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const [togglingUser, setTogglingUser] = useState(null);
@@ -62,10 +65,6 @@ export const AdminDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
-
-  useEffect(() => {
-    filterUsers();
-  }, [searchTerm, roleFilter, users]);
 
   const fetchDashboardData = async () => {
     try {
@@ -117,7 +116,6 @@ export const AdminDashboard = () => {
       prepareChartData(allSessions, allUsers, allTherapists);
       
       setUsers(allUsers);
-      setFilteredUsers(allUsers);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -179,25 +177,6 @@ export const AdminDashboard = () => {
     });
   };
 
-  const filterUsers = () => {
-    let filtered = users;
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by role
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter(user => user.role === roleFilter);
-    }
-
-    setFilteredUsers(filtered);
-  };
-
   const handleDeleteUser = async (userId) => {
     try {
       setDeletingUser(true);
@@ -247,8 +226,6 @@ export const AdminDashboard = () => {
     }
   };
 
-  const COLORS = ['#9ECAD6', '#748DAE', '#F5CBCB', '#10B981', '#F59E0B'];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 pt-24 pb-12 flex items-center justify-center">
@@ -260,10 +237,234 @@ export const AdminDashboard = () => {
     );
   }
 
+  // ─── Tab panels ──────────────────────────────────────────────────────────────
+  const OverviewPanel = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Total Users */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="p-3 bg-blue-100 rounded-lg"><Users className="h-6 w-6 text-blue-600" /></div>
+          <span className="text-xs text-gray-500">Total</span>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalUsers}</h3>
+        <p className="text-sm text-gray-600">Total Users</p>
+        <div className="mt-3 flex gap-2 text-xs flex-wrap">
+          <span className="text-[#9ECAD6]">Patients: {stats.totalPatients}</span>
+          <span className="text-[#748DAE]">Therapists: {stats.totalTherapists}</span>
+          <span className="text-[#F5CBCB]">Supervisors: {stats.totalSupervisors}</span>
+        </div>
+      </motion.div>
+
+      {/* Total Sessions */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="p-3 bg-green-100 rounded-lg"><Calendar className="h-6 w-6 text-green-600" /></div>
+          <span className="text-xs text-gray-500">Sessions</span>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalSessions}</h3>
+        <p className="text-sm text-gray-600">Total Sessions</p>
+        <div className="mt-3 flex gap-2 text-xs">
+          <span className="text-green-600">Completed: {stats.completedSessions}</span>
+          <span className="text-yellow-600">Pending: {stats.pendingSessions}</span>
+        </div>
+      </motion.div>
+
+      {/* Total Feedback */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="p-3 bg-purple-100 rounded-lg"><MessageSquare className="h-6 w-6 text-purple-600" /></div>
+          <span className="text-xs text-gray-500">Feedback</span>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalFeedbacks}</h3>
+        <p className="text-sm text-gray-600">Total Feedback</p>
+        <div className="mt-3 flex items-center gap-1 text-xs">
+          <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+          <span className="text-gray-600">Avg: {stats.averageRating.toFixed(1)}/5</span>
+        </div>
+      </motion.div>
+
+      {/* Total Revenue */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="p-3 bg-yellow-100 rounded-lg"><DollarSign className="h-6 w-6 text-yellow-600" /></div>
+          <span className="text-xs text-gray-500">Revenue</span>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{stats.totalRevenue.toLocaleString()}</h3>
+        <p className="text-sm text-gray-600">Total Revenue</p>
+        <div className="mt-3 text-xs text-gray-600">From {stats.completedSessions} completed sessions</div>
+      </motion.div>
+
+      {/* Therapist Verification */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="p-3 bg-teal-100 rounded-lg"><UserCheck className="h-6 w-6 text-teal-600" /></div>
+          <span className="text-xs text-gray-500">Therapists</span>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalTherapists}</h3>
+        <p className="text-sm text-gray-600">Registered Therapists</p>
+        <div className="mt-3 flex gap-2 text-xs flex-wrap">
+          <span className="flex items-center gap-1 text-green-600"><CheckCircle className="h-3 w-3" /> Verified: {stats.verifiedTherapists}</span>
+          <span className="text-yellow-600">Pending: {stats.pendingTherapists}</span>
+        </div>
+      </motion.div>
+
+      {/* Platform at a Glance */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:col-span-1 lg:col-span-3"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="h-5 w-5 text-[#748DAE]" />
+          <h3 className="text-base font-semibold text-gray-900">Platform at a Glance</h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Completion Rate', value: stats.totalSessions > 0 ? `${((stats.completedSessions / stats.totalSessions) * 100).toFixed(0)}%` : '—', color: 'text-green-600' },
+            { label: 'Active Users',    value: users.filter(u => u.isActive).length,  color: 'text-blue-600' },
+            { label: 'Inactive Users',  value: users.filter(u => !u.isActive).length, color: 'text-red-500' },
+            { label: 'Avg Rating',      value: `${stats.averageRating.toFixed(1)} ★`,  color: 'text-yellow-500' },
+          ].map(item => (
+            <div key={item.label} className="bg-gray-50 rounded-lg p-4 text-center">
+              <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
+              <p className="text-xs text-gray-500 mt-1">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  const AnalyticsPanel = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Sessions Over Time */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart3 className="h-5 w-5 text-[#748DAE]" />
+          <h3 className="text-lg font-semibold text-gray-900">Sessions (Last 7 Days)</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={chartData.sessionsOverTime}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="sessions" stroke="#748DAE" strokeWidth={2} dot={{ r: 4 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </motion.div>
+
+      {/* Sessions by Status */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <PieChart className="h-5 w-5 text-[#9ECAD6]" />
+          <h3 className="text-lg font-semibold text-gray-900">Sessions by Status</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <RePieChart>
+            <Pie
+              data={chartData.sessionsByStatus}
+              cx="50%" cy="50%"
+              labelLine={false}
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              outerRadius={90}
+              dataKey="value"
+            >
+              {chartData.sessionsByStatus.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </RePieChart>
+        </ResponsiveContainer>
+      </motion.div>
+
+      {/* Users by Role */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="h-5 w-5 text-[#F5CBCB]" />
+          <h3 className="text-lg font-semibold text-gray-900">Users by Role</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={chartData.userGrowth}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="count" fill="#9ECAD6" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
+
+      {/* Therapists by Specialization */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="h-5 w-5 text-[#748DAE]" />
+          <h3 className="text-lg font-semibold text-gray-900">Top Specializations</h3>
+        </div>
+        {chartData.therapistsBySpecialization.length > 0 ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={chartData.therapistsBySpecialization} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="name" type="category" width={110} />
+              <Tooltip />
+              <Bar dataKey="value" fill="#748DAE" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[280px] text-gray-400">
+            <div className="text-center">
+              <Activity className="h-12 w-12 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No specializations data available</p>
+              <p className="text-xs mt-1">Therapists need to set their specializations</p>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* Header */}
+
+        {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -273,391 +474,55 @@ export const AdminDashboard = () => {
           <p className="text-gray-600">Comprehensive overview and management of CareNest platform</p>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Total Users */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <span className="text-xs text-gray-500">Total</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalUsers}</h3>
-            <p className="text-sm text-gray-600">Total Users</p>
-            <div className="mt-3 flex gap-2 text-xs">
-              <span className="text-[#9ECAD6]">Patients: {stats.totalPatients}</span>
-              <span className="text-[#748DAE]">Therapists: {stats.totalTherapists}</span>
-            </div>
-          </motion.div>
-
-          {/* Total Sessions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Calendar className="h-6 w-6 text-green-600" />
-              </div>
-              <span className="text-xs text-gray-500">Sessions</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalSessions}</h3>
-            <p className="text-sm text-gray-600">Total Sessions</p>
-            <div className="mt-3 flex gap-2 text-xs">
-              <span className="text-green-600">Completed: {stats.completedSessions}</span>
-              <span className="text-yellow-600">Pending: {stats.pendingSessions}</span>
-            </div>
-          </motion.div>
-
-          {/* Total Feedback */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <MessageSquare className="h-6 w-6 text-purple-600" />
-              </div>
-              <span className="text-xs text-gray-500">Feedback</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalFeedbacks}</h3>
-            <p className="text-sm text-gray-600">Total Feedback</p>
-            <div className="mt-3 flex items-center gap-1 text-xs">
-              <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-              <span className="text-gray-600">Avg: {stats.averageRating.toFixed(1)}/5</span>
-            </div>
-          </motion.div>
-
-          {/* Total Revenue */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <DollarSign className="h-6 w-6 text-yellow-600" />
-              </div>
-              <span className="text-xs text-gray-500">Revenue</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{stats.totalRevenue.toLocaleString()}</h3>
-            <p className="text-sm text-gray-600">Total Revenue</p>
-            <div className="mt-3 text-xs text-gray-600">
-              From {stats.completedSessions} completed sessions
-            </div>
-          </motion.div>
+        {/* Tab Bar */}
+        <div className="mb-8 border-b border-gray-200">
+          <nav className="flex gap-1" aria-label="Dashboard tabs">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`relative flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors focus:outline-none ${
+                  activeTab === id ? 'text-[#748DAE]' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+                {activeTab === id && (
+                  <motion.span
+                    layoutId="tab-underline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#748DAE] rounded-full"
+                  />
+                )}
+              </button>
+            ))}
+          </nav>
         </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Sessions Over Time */}
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            key={activeTab}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
           >
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart3 className="h-5 w-5 text-[#748DAE]" />
-              <h3 className="text-lg font-semibold text-gray-900">Sessions (Last 7 Days)</h3>
-            </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={chartData.sessionsOverTime}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="sessions" stroke="#748DAE" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Sessions by Status */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <PieChart className="h-5 w-5 text-[#9ECAD6]" />
-              <h3 className="text-lg font-semibold text-gray-900">Sessions by Status</h3>
-            </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <RePieChart>
-                <Pie
-                  data={chartData.sessionsByStatus}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {chartData.sessionsByStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </RePieChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Users by Role */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="h-5 w-5 text-[#F5CBCB]" />
-              <h3 className="text-lg font-semibold text-gray-900">Users by Role</h3>
-            </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={chartData.userGrowth}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#9ECAD6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Therapists by Specialization */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="h-5 w-5 text-[#748DAE]" />
-              <h3 className="text-lg font-semibold text-gray-900">Top Specializations</h3>
-            </div>
-            {chartData.therapistsBySpecialization.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={chartData.therapistsBySpecialization} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#748DAE" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[250px] text-gray-400">
-                <div className="text-center">
-                  <Activity className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No specializations data available</p>
-                  <p className="text-xs mt-1">Therapists need to set their specializations</p>
-                </div>
-              </div>
+            {activeTab === 'overview'  && <OverviewPanel />}
+            {activeTab === 'analytics' && <AnalyticsPanel />}
+            {activeTab === 'users' && (
+              <UserManagement
+                users={users}
+                onDelete={handleDeleteUser}
+                onToggleActive={handleToggleActive}
+                deletingUser={deletingUser}
+                togglingUser={togglingUser}
+                deleteConfirm={deleteConfirm}
+                setDeleteConfirm={setDeleteConfirm}
+              />
             )}
           </motion.div>
-        </div>
-
-        {/* User Management Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#748DAE] focus:border-transparent text-sm"
-                />
-              </div>
-              {/* Role Filter */}
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#748DAE] focus:border-transparent text-sm"
-              >
-                <option value="all">All Roles</option>
-                <option value="patient">Patients</option>
-                <option value="therapist">Therapists</option>
-                <option value="supervisor">Supervisors</option>
-                <option value="admin">Admins</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Users Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        user.role === 'patient' ? 'bg-blue-100 text-blue-800' :
-                        user.role === 'therapist' ? 'bg-purple-100 text-purple-800' :
-                        user.role === 'supervisor' ? 'bg-green-100 text-green-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {user.isActive ? (
-                        <span className="flex items-center gap-1 text-green-600 text-sm">
-                          <CheckCircle className="h-4 w-4" />
-                          Active
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-red-600 text-sm">
-                          <XCircle className="h-4 w-4" />
-                          Inactive
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleToggleActive(user._id)}
-                          disabled={togglingUser === user._id}
-                          className={`${
-                            user.isActive 
-                              ? 'text-yellow-600 hover:text-yellow-800' 
-                              : 'text-green-600 hover:text-green-800'
-                          } transition-colors disabled:opacity-50`}
-                          title={user.isActive ? 'Deactivate user' : 'Activate user'}
-                        >
-                          {togglingUser === user._id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : user.isActive ? (
-                            <XCircle className="h-4 w-4" />
-                          ) : (
-                            <CheckCircle className="h-4 w-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(user)}
-                          className="text-red-600 hover:text-red-800 transition-colors"
-                          title="Delete user"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No users found</p>
-            </div>
-          )}
-        </motion.div>
+        </AnimatePresence>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => !deletingUser && setDeleteConfirm(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-red-100 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Delete User</h3>
-                  <p className="text-sm text-gray-600">This action cannot be undone</p>
-                </div>
-              </div>
-              
-              <p className="text-gray-700 mb-6">
-                Are you sure you want to delete <strong>{deleteConfirm.fullName}</strong> ({deleteConfirm.email})?
-                This will permanently remove all their data.
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  disabled={deletingUser}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleDeleteUser(deleteConfirm._id)}
-                  disabled={deletingUser}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {deletingUser ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    'Delete User'
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

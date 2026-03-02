@@ -4,4 +4,5 @@ export const userService = {
   updateAccountDetails: (data) => api.patch('/users/update-account', data),
   updateAvatar: (data) => api.patch('/users/avatar', data),
   getWatchHistory: () => api.get('/users/history'),
+  getUserDetail: (userId) => api.get(`/users/${userId}/detail`),
 };
