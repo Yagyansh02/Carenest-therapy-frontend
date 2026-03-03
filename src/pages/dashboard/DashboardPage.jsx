@@ -8,6 +8,7 @@ import { sessionService } from '../../api/session';
 import { assessmentService } from '../../api/assessment';
 import { supervisorService } from '../../api/supervisor';
 import { therapistService } from '../../api/therapist';
+import { collegeService } from '../../api/college';
 import api from '../../api/axios';
 
 export const DashboardPage = () => {
@@ -29,6 +30,8 @@ export const DashboardPage = () => {
         return <TherapistDashboardContent user={user} />;
       case 'supervisor':
         return <SupervisorDashboard user={user} navigate={navigate} />;
+      case 'college':
+        return <CollegeDashboard user={user} navigate={navigate} />;
       case 'admin':
         // Will redirect via useEffect
         return null;
@@ -755,6 +758,227 @@ const SupervisorDashboard = ({ user, navigate }) => {
                 ))}
                 {supervisedStudents.length > 3 && (
                   <p className="text-xs text-gray-500 mt-2">+{supervisedStudents.length - 3} more</p>
+                )}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+const CollegeDashboard = ({ user, navigate }) => {
+  const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
+  const [collegeProfile, setCollegeProfile] = useState(null);
+  const [affiliatedStudents, setAffiliatedStudents] = useState([]);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    verifiedStudents: 0,
+    pendingStudents: 0,
+  });
+
+  useEffect(() => {
+    fetchCollegeData();
+  }, []);
+
+  const fetchCollegeData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch college profile
+      try {
+        const profileResponse = await collegeService.getMyProfile();
+        const profile = profileResponse.data.data;
+
+        if (!profile || !profile._id) {
+          setRedirecting(true);
+          navigate('/college/profile-setup');
+          return;
+        }
+
+        setCollegeProfile(profile);
+        const students = profile.affiliatedStudents || [];
+        setAffiliatedStudents(students);
+
+        // Fetch therapist details for affiliated students to get verification info
+        const therapistsResponse = await therapistService.getAllTherapists(1, 1000);
+        const allTherapists = therapistsResponse.data.data?.therapists || [];
+
+        const studentUserIds = students.map(s => s._id?.toString() || s.toString());
+        const studentTherapists = allTherapists.filter(t =>
+          studentUserIds.includes(t.userId?._id?.toString() || t.userId?.toString())
+        );
+
+        const verifiedCount = studentTherapists.filter(t => t.verificationStatus === 'verified').length;
+        const pendingCount = studentTherapists.filter(t => t.verificationStatus === 'pending').length;
+
+        setStats({
+          totalStudents: students.length,
+          verifiedStudents: verifiedCount,
+          pendingStudents: pendingCount,
+        });
+      } catch (err) {
+        console.error('Error fetching college profile:', err);
+        setRedirecting(true);
+        navigate('/college/profile-setup');
+        return;
+      }
+    } catch (error) {
+      console.error('Error fetching college data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const dashboardStats = [
+    { label: 'Total Affiliated Students', value: loading ? '...' : stats.totalStudents.toString(), icon: User, color: 'bg-[#9ECAD6]' },
+    { label: 'Verified Interns', value: loading ? '...' : stats.verifiedStudents.toString(), icon: CheckCircle, color: 'bg-green-500' },
+    { label: 'Pending Verification', value: loading ? '...' : stats.pendingStudents.toString(), icon: Clock, color: 'bg-[#F5CBCB]' },
+  ];
+
+  if (redirecting) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-secondary-600">Redirecting to profile setup...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* College Info Card */}
+      {collegeProfile && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-[#9ECAD6] to-[#748DAE] rounded-lg shadow-md p-6 text-white"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-1">{collegeProfile.institutionName}</h3>
+              <p className="text-sm opacity-90 mb-2">Affiliation No: {collegeProfile.affiliationNumber}</p>
+              {collegeProfile.department && (
+                <p className="text-sm opacity-80">{collegeProfile.department}</p>
+              )}
+              <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
+                collegeProfile.verificationStatus === 'verified'
+                  ? 'bg-green-500/30 text-green-100'
+                  : 'bg-yellow-500/30 text-yellow-100'
+              }`}>
+                {collegeProfile.verificationStatus === 'verified' ? 'Verified' : 'Pending Verification'}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {dashboardStats.map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">{stat.label}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+              </div>
+              <div className={`${stat.color} p-3 rounded-lg`}>
+                <stat.icon className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Affiliated Students */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Affiliated Students</h2>
+            <button
+              onClick={() => navigate('/college/manage-students')}
+              className="text-[#748DAE] hover:text-[#657B9D] text-sm font-medium"
+            >
+              View All →
+            </button>
+          </div>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#748DAE] mx-auto"></div>
+            </div>
+          ) : affiliatedStudents.length > 0 ? (
+            <div className="space-y-3">
+              {affiliatedStudents.slice(0, 5).map((student) => (
+                <div key={student._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-10 h-10 bg-[#9ECAD6] rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium text-sm">
+                      {student.fullName?.charAt(0) || 'S'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{student.fullName || 'Unknown'}</p>
+                    <p className="text-xs text-gray-500">{student.email}</p>
+                  </div>
+                </div>
+              ))}
+              {affiliatedStudents.length > 5 && (
+                <p className="text-xs text-gray-500 text-center">+{affiliatedStudents.length - 5} more</p>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <User className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">No students affiliated yet</p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
+        >
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate('/college/manage-students')}
+              className="w-full p-4 text-left bg-[#9ECAD6] hover:bg-[#8BB9C5] text-white rounded-lg transition-colors"
+            >
+              <p className="font-medium">Manage Students</p>
+            </button>
+            <button
+              onClick={() => navigate('/college/profile-setup')}
+              className="w-full p-4 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-colors"
+            >
+              <p className="font-medium">Update College Profile</p>
+            </button>
+          </div>
+
+          {/* Agreement Info */}
+          {collegeProfile && (collegeProfile.agreementStartDate || collegeProfile.agreementEndDate) && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Agreement Period</h3>
+              <div className="text-sm text-gray-600 space-y-1">
+                {collegeProfile.agreementStartDate && (
+                  <p>Start: {new Date(collegeProfile.agreementStartDate).toLocaleDateString()}</p>
+                )}
+                {collegeProfile.agreementEndDate && (
+                  <p>End: {new Date(collegeProfile.agreementEndDate).toLocaleDateString()}</p>
                 )}
               </div>
             </div>

@@ -26,6 +26,8 @@ import { PatientFeedbackHistory } from '../pages/feedback/PatientFeedbackHistory
 import { TherapistReports } from '../pages/supervisor/TherapistReports';
 import { TherapistDetailedReport } from '../pages/supervisor/TherapistDetailedReport';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
+import { CollegeProfileSetup } from '../pages/college/CollegeProfileSetup';
+import { ManageStudents } from '../pages/college/ManageStudents';
 
 export const AppRoutes = () => {
   return (
@@ -182,6 +184,22 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/college/profile-setup"
+          element={
+            <ProtectedRoute>
+              <CollegeProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/college/manage-students"
+          element={
+            <ProtectedRoute>
+              <ManageStudents />
             </ProtectedRoute>
           }
         />

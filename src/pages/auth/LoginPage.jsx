@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { assessmentService } from '../../api/assessment';
 import { therapistService } from '../../api/therapist';
+import { collegeService } from '../../api/college';
 
 export const LoginPage = () => {
   const [isActive, setIsActive] = useState(false);
@@ -56,6 +57,21 @@ export const LoginPage = () => {
           } catch (err) {
             if (err.response?.status === 404) {
               navigate('/therapist/setup-profile', { replace: true });
+            } else {
+              navigate(from, { replace: true });
+            }
+          }
+          return;
+        }
+
+        // College users go to profile setup if not completed
+        if (user.role === 'college') {
+          try {
+            await collegeService.getMyProfile();
+            navigate(from, { replace: true });
+          } catch (err) {
+            if (err.response?.status === 404) {
+              navigate('/college/profile-setup', { replace: true });
             } else {
               navigate(from, { replace: true });
             }
@@ -334,6 +350,7 @@ export const LoginPage = () => {
                   <option value="patient">Patient</option>
                   <option value="therapist">Therapist</option>
                   <option value="supervisor">Supervisor</option>
+                  <option value="college">College</option>
                 </select>
               </div>
             </div>

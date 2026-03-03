@@ -7,12 +7,14 @@ export const USER_ROLES = {
   PATIENT: 'patient',
   THERAPIST: 'therapist',
   SUPERVISOR: 'supervisor',
+  COLLEGE: 'college',
 };
 
 export const ROLE_LABELS = {
   [USER_ROLES.PATIENT]: 'Patient',
   [USER_ROLES.THERAPIST]: 'Therapist',
   [USER_ROLES.SUPERVISOR]: 'Supervisor',
+  [USER_ROLES.COLLEGE]: 'College',
 };
 
 // API Response Status Codes
