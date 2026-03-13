@@ -21,6 +21,12 @@ import {
   TrendingUp,
   FileText,
   ChevronRight,
+  GraduationCap,
+  Building2,
+  Phone,
+  Globe,
+  Hash,
+  UserSquare2,
 } from 'lucide-react';
 import { userService } from '../../api/user';
 
@@ -269,7 +275,80 @@ const TherapistDetail = ({ data }) => {
     </div>
   );
 };
+// ─── College detail view ─────────────────────────────────────────────────────────────
+const CollegeDetail = ({ data }) => {
+  const { collegeProfile: cp } = data;
 
+  if (!cp) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+        <SectionTitle>College Profile</SectionTitle>
+        <p className="text-sm text-gray-400 text-center py-6">No college profile set up yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard icon={Users}         label="Affiliated Students" value={cp.affiliatedStudents?.length ?? 0} bg="bg-blue-50"   color="text-blue-500" />
+        <StatCard icon={ShieldCheck}   label="Verification"        value={cp.verificationStatus}              bg={cp.verificationStatus === 'verified' ? 'bg-green-50' : cp.verificationStatus === 'rejected' ? 'bg-red-50' : 'bg-yellow-50'} color={cp.verificationStatus === 'verified' ? 'text-green-600' : cp.verificationStatus === 'rejected' ? 'text-red-500' : 'text-yellow-600'} />
+      </div>
+
+      {/* Institution info */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+        <SectionTitle>Institution Details</SectionTitle>
+        <InfoRow icon={Building2}    label="Institution Name"     value={cp.institutionName} />
+        <InfoRow icon={Hash}         label="Affiliation Number"   value={cp.affiliationNumber} />
+        <InfoRow icon={BookOpen}     label="Department"           value={cp.department || null} />
+        <InfoRow icon={Globe}        label="Website"              value={cp.website || null} />
+        <InfoRow icon={User}         label="Address"              value={cp.address || null} />
+      </div>
+
+      {/* Contact person */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+        <SectionTitle>Contact Person</SectionTitle>
+        <InfoRow icon={UserSquare2}  label="Name"   value={cp.contactPersonName || null} />
+        <InfoRow icon={Mail}         label="Email"  value={cp.contactPersonEmail || null} />
+        <InfoRow icon={Phone}        label="Phone"  value={cp.contactPhone || null} />
+      </div>
+
+      {/* Agreement period */}
+      {(cp.agreementStartDate || cp.agreementEndDate) && (
+        <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+          <SectionTitle>Agreement Period</SectionTitle>
+          <InfoRow icon={Calendar} label="Start Date" value={fmt(cp.agreementStartDate)} />
+          <InfoRow icon={Calendar} label="End Date"   value={fmt(cp.agreementEndDate)} />
+        </div>
+      )}
+
+      {/* Affiliated students */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+        <SectionTitle>Affiliated Students ({cp.affiliatedStudents?.length ?? 0})</SectionTitle>
+        {!cp.affiliatedStudents?.length ? (
+          <p className="text-sm text-gray-400 text-center py-6">No affiliated students yet</p>
+        ) : (
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+            {cp.affiliatedStudents.map((s) => (
+              <div key={s._id} className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-50 hover:bg-gray-50 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-[#EBF3F6] flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-[#748DAE]">
+                    {s.fullName?.charAt(0)?.toUpperCase()}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{s.fullName}</p>
+                  <p className="text-xs text-gray-400 truncate">{s.email}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 // ─── Generic supervisor / admin view ─────────────────────────────────────────
 const GenericDetail = ({ data }) => (
   <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
@@ -356,6 +435,7 @@ export const UserDetailPanel = ({ userId, onClose }) => {
                           role === 'patient'    ? 'bg-blue-100 text-blue-700' :
                           role === 'therapist'  ? 'bg-purple-100 text-purple-700' :
                           role === 'supervisor' ? 'bg-green-100 text-green-700' :
+                          role === 'college'    ? 'bg-teal-100 text-teal-700' :
                           'bg-red-100 text-red-700'
                         }`}>{role}</span>
                         {data?.user?.isActive ? (
@@ -415,7 +495,8 @@ export const UserDetailPanel = ({ userId, onClose }) => {
                 <>
                   {role === 'patient'   && <PatientDetail   data={data} />}
                   {role === 'therapist' && <TherapistDetail data={data} />}
-                  {!['patient', 'therapist'].includes(role) && <GenericDetail data={data} />}
+                  {role === 'college'   && <CollegeDetail   data={data} />}
+                  {!['patient', 'therapist', 'college'].includes(role) && <GenericDetail data={data} />}
                 </>
               )}
             </div>

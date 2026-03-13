@@ -197,6 +197,7 @@ export const UserManagement = ({
                     <option value="patient">Patient</option>
                     <option value="therapist">Therapist</option>
                     <option value="supervisor">Supervisor</option>
+                    <option value="college">College</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
@@ -334,6 +335,8 @@ export const UserManagement = ({
                             ? 'bg-purple-100 text-purple-800'
                             : user.role === 'supervisor'
                             ? 'bg-green-100 text-green-800'
+                            : user.role === 'college'
+                            ? 'bg-teal-100 text-teal-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
