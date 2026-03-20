@@ -28,10 +28,21 @@ import { TherapistDetailedReport } from '../pages/supervisor/TherapistDetailedRe
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { CollegeProfileSetup } from '../pages/college/CollegeProfileSetup';
 import { ManageStudents } from '../pages/college/ManageStudents';
+import { VideoCallPage } from '../pages/VideoCall/VideoCallPage';
 
 export const AppRoutes = () => {
   return (
     <Routes>
+      {/* Full-screen video call — rendered outside Layout so there is no navbar */}
+      <Route
+        path="/video-call/:sessionId"
+        element={
+          <ProtectedRoute>
+            <VideoCallPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route element={<Layout />}>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />

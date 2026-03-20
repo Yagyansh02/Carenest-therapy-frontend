@@ -122,7 +122,7 @@ export const SessionsList = () => {
       case 'pending':
         return 'Waiting for therapist approval...';
       case 'confirmed':
-        return 'Session confirmed! Meeting link available.';
+        return 'Session confirmed! You can join 15 minutes before the scheduled time.';
       case 'scheduled':
         return 'Session scheduled';
       case 'completed':
@@ -152,14 +152,13 @@ export const SessionsList = () => {
   };
 
   const canJoinSession = (session) => {
+    if (session.status !== 'confirmed' && session.status !== 'scheduled') return false;
+    if (session.meetingLink !== 'carenest-video') return false;
     const sessionTime = new Date(session.scheduledAt);
     const now = new Date();
     const fifteenMinutesBefore = new Date(sessionTime.getTime() - 15 * 60000);
-    
-    return (session.status === 'confirmed' || session.status === 'scheduled')
-      && now >= fifteenMinutesBefore 
-      && now <= sessionTime
-      && session.meetingLink;
+    const sessionEnd = new Date(sessionTime.getTime() + (session.duration || 60) * 60000);
+    return now >= fifteenMinutesBefore && now <= sessionEnd;
   };
 
   const canCancelSession = (session) => {
@@ -360,23 +359,18 @@ export const SessionsList = () => {
                   <div className="flex flex-col gap-2 md:w-48">
                     {canJoinSession(session) && (
                       <Button
-                        onClick={() => window.open(session.meetingLink, '_blank')}
+                        onClick={() => navigate(`/video-call/${session._id}`)}
                         size="sm"
                         className="w-full"
                       >
-                        Join Session
+                        Join Video Call
                       </Button>
                     )}
 
-                    {session.meetingLink && (session.status === 'confirmed' || session.status === 'scheduled') && !canJoinSession(session) && (
-                      <Button
-                        onClick={() => window.open(session.meetingLink, '_blank')}
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                      >
-                        View Meeting Link
-                      </Button>
+                    {!canJoinSession(session) && (session.status === 'confirmed' || session.status === 'scheduled') && session.meetingLink === 'carenest-video' && (
+                      <div className="px-3 py-2 text-xs text-center text-blue-600 bg-blue-50 rounded-lg">
+                        Video call ready — join 15 min before session
+                      </div>
                     )}
 
                     {canCancelSession(session) && (
