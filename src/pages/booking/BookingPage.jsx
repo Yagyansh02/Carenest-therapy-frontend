@@ -23,6 +23,7 @@ export const BookingPage = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [availableSlots, setAvailableSlots] = useState([]);
   const [bookedDates, setBookedDates] = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
 
   // Session details
   const [duration, setDuration] = useState(60);
@@ -42,7 +43,7 @@ export const BookingPage = () => {
     if (selectedDate && therapist) {
       generateTimeSlots();
     }
-  }, [selectedDate, therapist]);
+  }, [selectedDate, therapist, bookedSlots]);
 
   const fetchTherapistDetails = async () => {
     try {
@@ -59,54 +60,91 @@ export const BookingPage = () => {
 
   const fetchTherapistSessions = async () => {
     try {
-      // Fetch therapist's sessions to mark booked dates
-      const response = await sessionService.getAllSessions();
-      const sessions = response.data.data.sessions || [];
-      
-      // Get therapist's user ID for comparison
       const therapistUserId = therapist?.userId?._id || therapist?.userId;
+      if (!therapistUserId) return;
+
+      const response = await sessionService.getTherapistBookedSlots(therapistUserId);
+      const sessions = response.data.data.bookedSessions || [];
       
-      // Extract booked dates - compare with therapist's user ID
-      const booked = sessions
-        .filter(s => {
-          const sessionTherapistId = s.therapistId?._id || s.therapistId;
-          return sessionTherapistId === therapistUserId && s.status === 'scheduled';
-        })
-        .map(s => new Date(s.scheduledAt).toDateString());
+      const slots = sessions.map(s => {
+        const d = new Date(s.scheduledAt);
+        return {
+          dateString: d.toDateString(),
+          time: `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+        };
+      });
       
-      setBookedDates([...new Set(booked)]);
+      setBookedSlots(slots);
+      
+      // We no longer block entire dates unless all slots are booked, but for backward compatibility in rendering:
+      // Actually, we can remove the entire "bookedDates" disabling logic in the calendar,
+      // but let's keep it if we want to gray out fully booked days. For now, empty `bookedDates` to not gray out whole days.
+      setBookedDates([]);
     } catch (err) {
       console.error('Error fetching sessions:', err);
     }
   };
 
   const generateTimeSlots = () => {
-    const dayOfWeek = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    let availability = therapist?.availability?.[dayOfWeek] || [];
+    try {
+      const dayOfWeek = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+      let availability = therapist?.availability?.[dayOfWeek];
 
-    // If therapist hasn't set availability, use default working hours (9 AM - 5 PM)
-    if (availability.length === 0 && ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(dayOfWeek)) {
-      availability = ['09:00-17:00'];
-    }
-
-    if (availability.length === 0) {
-      setAvailableSlots([]);
-      return;
-    }
-
-    const slots = [];
-    availability.forEach(timeRange => {
-      const [start, end] = timeRange.split('-');
-      const startHour = parseInt(start.split(':')[0]);
-      const endHour = parseInt(end.split(':')[0]);
-
-      for (let hour = startHour; hour < endHour; hour++) {
-        const time = `${hour.toString().padStart(2, '0')}:00`;
-        slots.push(time);
+      // Ensure availability is always an array
+      if (!Array.isArray(availability) || availability.length === 0) {
+        // Default to 9 AM - 5 PM for weekdays if therapist hasn't set availability
+        if (['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(dayOfWeek)) {
+          availability = [{ start: '09:00', end: '17:00' }];
+        } else {
+          setAvailableSlots([]);
+          return;
+        }
       }
-    });
 
-    setAvailableSlots(slots);
+      const slots = [];
+      availability.forEach(slot => {
+        let startHour, endHour;
+
+        if (typeof slot === 'string') {
+          // Handle legacy string format "09:00-17:00"
+          const parts = slot.split('-');
+          if (parts.length < 2) return;
+          startHour = parseInt(parts[0]);
+          endHour = parseInt(parts[1]);
+        } else if (slot && typeof slot === 'object' && slot.start && slot.end) {
+          // Handle backend object format { start: "09:00", end: "17:00" }
+          startHour = parseInt(slot.start);
+          endHour = parseInt(slot.end);
+        } else {
+          return;
+        }
+
+        if (isNaN(startHour) || isNaN(endHour) || startHour >= endHour) return;
+
+        const now = new Date();
+        const isToday = selectedDate.toDateString() === now.toDateString();
+
+        for (let hour = startHour; hour < endHour; hour++) {
+          const time = `${hour.toString().padStart(2, '0')}:00`;
+
+          // Skip past time slots if today
+          if (isToday && hour <= now.getHours()) {
+            continue;
+          }
+
+          // Skip if booked
+          const isBooked = bookedSlots.some(s => s.dateString === selectedDate.toDateString() && s.time === time);
+          if (!isBooked) {
+            slots.push(time);
+          }
+        }
+      });
+
+      setAvailableSlots(slots);
+    } catch (err) {
+      console.error('Error generating time slots:', err);
+      setAvailableSlots([]);
+    }
   };
 
   const getDaysInMonth = (date) => {
@@ -123,21 +161,19 @@ export const BookingPage = () => {
   const isDateAvailable = (date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     if (date < today) return false;
-    
+
     const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    let hasAvailability = therapist?.availability?.[dayOfWeek]?.length > 0;
-    
+    const daySlots = therapist?.availability?.[dayOfWeek];
+    let hasAvailability = Array.isArray(daySlots) && daySlots.length > 0;
+
     // If therapist hasn't set availability, default to weekdays (Monday-Friday) being available
     if (!hasAvailability && ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].includes(dayOfWeek)) {
       hasAvailability = true;
     }
-    
-    const dateString = date.toDateString();
-    const isBooked = bookedDates.includes(dateString);
 
-    return hasAvailability && !isBooked;
+    return hasAvailability;
   };
 
   const handleDateSelect = (date) => {

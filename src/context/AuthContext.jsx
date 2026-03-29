@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   loginUser,
   registerUser,
@@ -13,6 +14,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user, isAuthenticated, isLoading, error } = useSelector(
     (state) => state.auth
   );
@@ -49,6 +51,8 @@ export const AuthProvider = ({ children }) => {
     await dispatch(logoutUser());
     // Clear assessment state on logout to prevent data from persisting to next user
     dispatch(resetAssessmentState());
+    // Immediately redirect to login
+    navigate('/login');
   };
 
   const clearAuthError = () => {

@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store/store';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { ScrollToTop } from './components/ScrollToTop';
 import { initSecurity } from './utils/security';
@@ -28,7 +29,9 @@ function App() {
         <BrowserRouter>
           <ScrollToTop />
           <AuthProvider>
-            <AppRoutes />
+            <SocketProvider>
+              <AppRoutes />
+            </SocketProvider>
           </AuthProvider>
         </BrowserRouter>
       </PersistGate>

@@ -13,7 +13,6 @@ export const TherapistSessions = () => {
   const [filter, setFilter] = useState('all'); // all, pending, upcoming, past
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
-  const [meetingLinkModal, setMeetingLinkModal] = useState({ show: false, sessionId: null, meetingLink: '' });
   const [sessionFeedbacks, setSessionFeedbacks] = useState({}); // Track which sessions have feedback
   const [assessmentModal, setAssessmentModal] = useState({ show: false, patientId: null, patientName: '' });
 
@@ -53,30 +52,16 @@ export const TherapistSessions = () => {
     }
   };
 
-  const handleAcceptSession = (sessionId) => {
-    setMeetingLinkModal({ show: true, sessionId, meetingLink: '' });
-  };
-
-  const confirmAcceptSession = async () => {
-    const { sessionId, meetingLink } = meetingLinkModal;
-    
-    if (!meetingLink.trim()) {
-      alert('Please provide a meeting link');
-      return;
-    }
-
+  const handleAcceptSession = async (sessionId) => {
     try {
       setActionLoading(sessionId);
-      await sessionService.acceptSession(sessionId, meetingLink.trim());
-      
-      // Update local state
-      setSessions(sessions.map(s => 
-        s._id === sessionId 
-          ? { ...s, status: 'confirmed', meetingLink: meetingLink.trim() }
+      await sessionService.acceptSession(sessionId);
+
+      setSessions(sessions.map(s =>
+        s._id === sessionId
+          ? { ...s, status: 'confirmed', meetingLink: 'carenest-video' }
           : s
       ));
-      
-      setMeetingLinkModal({ show: false, sessionId: null, meetingLink: '' });
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to accept session');
       console.error(err);
@@ -226,6 +211,16 @@ export const TherapistSessions = () => {
     const sessionTime = new Date(session.scheduledAt);
     const now = new Date();
     return (session.status === 'confirmed' || session.status === 'scheduled') && sessionTime <= now;
+  };
+
+  const canJoinSession = (session) => {
+    if (session.status !== 'confirmed' && session.status !== 'scheduled') return false;
+    if (session.meetingLink !== 'carenest-video') return false;
+    const sessionTime = new Date(session.scheduledAt);
+    const now = new Date();
+    const fifteenMinutesBefore = new Date(sessionTime.getTime() - 15 * 60000);
+    const sessionEnd = new Date(sessionTime.getTime() + (session.duration || 60) * 60000);
+    return now >= fifteenMinutesBefore && now <= sessionEnd;
   };
 
   const filteredSessions = getFilteredSessions();
@@ -429,6 +424,23 @@ export const TherapistSessions = () => {
 
 
 
+                    {/* Join Video Call */}
+                    {canJoinSession(session) && (
+                      <Button
+                        onClick={() => navigate(`/video-call/${session._id}`)}
+                        size="sm"
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        Join Video Call
+                      </Button>
+                    )}
+
+                    {!canJoinSession(session) && (session.status === 'confirmed' || session.status === 'scheduled') && session.meetingLink === 'carenest-video' && (
+                      <div className="px-3 py-2 text-xs text-center text-blue-600 bg-blue-50 rounded-lg">
+                        Video call — available 15 min before session
+                      </div>
+                    )}
+
                     {/* Complete Session */}
                     {canTakeAction(session) && (
                       <Button
@@ -484,6 +496,19 @@ export const TherapistSessions = () => {
                       </span>
                     )}
 
+                    {/* Chat button for confirmed/scheduled/completed sessions */}
+                    {['confirmed', 'scheduled', 'completed'].includes(session.status) && (
+                      <button
+                        onClick={() => navigate(`/chat/new/${session.patientId._id}`)}
+                        className="px-4 py-2 text-sm font-medium text-[#748DAE] hover:bg-[#9ECAD6]/20 rounded-lg transition flex items-center gap-2 justify-center"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        Message Patient
+                      </button>
+                    )}
+
                   </div>
                 </div>
               </Card>
@@ -491,45 +516,6 @@ export const TherapistSessions = () => {
           </div>
         )}
       </div>
-
-      {/* Meeting Link Modal */}
-      {meetingLinkModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
-              Accept Session & Provide Meeting Link
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Please provide a meeting link (Google Meet, Zoom, etc.) for the session.
-            </p>
-            <input
-              type="url"
-              value={meetingLinkModal.meetingLink}
-              onChange={(e) =>
-                setMeetingLinkModal({ ...meetingLinkModal, meetingLink: e.target.value })
-              }
-              placeholder="https://meet.google.com/..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 mb-4"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={confirmAcceptSession}
-                disabled={actionLoading === meetingLinkModal.sessionId}
-                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-              >
-                {actionLoading === meetingLinkModal.sessionId ? 'Processing...' : 'Confirm & Accept'}
-              </button>
-              <button
-                onClick={() => setMeetingLinkModal({ show: false, sessionId: null, meetingLink: '' })}
-                disabled={actionLoading === meetingLinkModal.sessionId}
-                className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Patient Assessment Modal */}
       <PatientAssessmentModal

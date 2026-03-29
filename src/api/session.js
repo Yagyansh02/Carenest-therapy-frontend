@@ -31,9 +31,9 @@ export const sessionService = {
   // Update session
   updateSession: (id, data) => api.put(`/sessions/${id}`, data),
   
-  // Accept session request (therapist only)
-  acceptSession: (id, meetingLink, therapistNotes = '') => 
-    api.post(`/sessions/${id}/accept`, { meetingLink, therapistNotes }),
+  // Accept session request (therapist only) — room is auto-created by the server
+  acceptSession: (id, therapistNotes = '') =>
+    api.post(`/sessions/${id}/accept`, { therapistNotes }),
   
   // Reject session request (therapist only)
   rejectSession: (id, reason = '') => 
@@ -53,6 +53,12 @@ export const sessionService = {
   
   // Update payment status
   updatePaymentStatus: (id, status) => api.put(`/sessions/${id}/payment`, { paymentStatus: status }),
+  
+  // Get booked slots for a specific therapist (publicly/authenticated accessible)
+  getTherapistBookedSlots: (therapistId, date) => {
+    const params = date ? `?date=${date}` : '';
+    return api.get(`/sessions/therapist/${therapistId}/booked-slots${params}`);
+  },
   
   // Delete session (admin only)
   deleteSession: (id) => api.delete(`/sessions/${id}`),
