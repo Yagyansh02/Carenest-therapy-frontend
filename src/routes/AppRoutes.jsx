@@ -62,7 +62,7 @@ export const AppRoutes = () => {
         <Route
           path="/therapist/setup-profile"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['therapist']}>
               <TherapistProfileSetup />
             </ProtectedRoute>
           }
@@ -70,7 +70,7 @@ export const AppRoutes = () => {
         <Route
           path="/therapist/sessions"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['therapist']}>
               <TherapistSessions />
             </ProtectedRoute>
           }
@@ -78,7 +78,7 @@ export const AppRoutes = () => {
         <Route
           path="/book/:therapistId"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['patient']}>
               <BookingPage />
             </ProtectedRoute>
           }
@@ -86,7 +86,7 @@ export const AppRoutes = () => {
         <Route
           path="/assessment"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['patient']}>
               <AssessmentForm />
             </ProtectedRoute>
           }
@@ -94,7 +94,7 @@ export const AppRoutes = () => {
         <Route
           path="/assessment/recommendations"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['patient']}>
               <TherapistRecommendations />
             </ProtectedRoute>
           }
@@ -102,7 +102,7 @@ export const AppRoutes = () => {
         <Route
           path="/sessions"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['patient', 'therapist', 'supervisor']}>
               <SessionsList />
             </ProtectedRoute>
           }
@@ -110,7 +110,7 @@ export const AppRoutes = () => {
         <Route
           path="/payment"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['patient']}>
               <PaymentPage />
             </ProtectedRoute>
           }
@@ -118,7 +118,7 @@ export const AppRoutes = () => {
         <Route
           path="/supervisor/manage-therapists"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['supervisor']}>
               <ManageTherapists />
             </ProtectedRoute>
           }
@@ -126,7 +126,7 @@ export const AppRoutes = () => {
         <Route
           path="/supervisor/therapist/:id"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['supervisor']}>
               <TherapistProfileView />
             </ProtectedRoute>
           }
@@ -134,7 +134,7 @@ export const AppRoutes = () => {
         <Route
           path="/supervisor/profile-setup"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['supervisor']}>
               <SupervisorProfileSetup />
             </ProtectedRoute>
           }
@@ -142,7 +142,7 @@ export const AppRoutes = () => {
         <Route
           path="/supervisor/reports"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['supervisor']}>
               <TherapistReports />
             </ProtectedRoute>
           }
@@ -150,7 +150,7 @@ export const AppRoutes = () => {
         <Route
           path="/supervisor/therapist-report/:therapistId"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['supervisor']}>
               <TherapistDetailedReport />
             </ProtectedRoute>
           }
@@ -158,7 +158,7 @@ export const AppRoutes = () => {
         <Route
           path="/my-feedback"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['patient']}>
               <MyFeedbackPage />
             </ProtectedRoute>
           }
@@ -166,7 +166,7 @@ export const AppRoutes = () => {
         <Route
           path="/give-feedback"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['patient']}>
               <GiveFeedbackPage />
             </ProtectedRoute>
           }
@@ -174,7 +174,7 @@ export const AppRoutes = () => {
         <Route
           path="/feedback-history"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['patient']}>
               <PatientFeedbackHistory />
             </ProtectedRoute>
           }
@@ -182,7 +182,7 @@ export const AppRoutes = () => {
         <Route
           path="/admin/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
             </ProtectedRoute>
           }
@@ -190,7 +190,7 @@ export const AppRoutes = () => {
         <Route
           path="/college/profile-setup"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['college']}>
               <CollegeProfileSetup />
             </ProtectedRoute>
           }
@@ -198,7 +198,7 @@ export const AppRoutes = () => {
         <Route
           path="/college/manage-students"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['college']}>
               <ManageStudents />
             </ProtectedRoute>
           }
