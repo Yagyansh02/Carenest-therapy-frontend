@@ -29,6 +29,7 @@ import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { CollegeProfileSetup } from '../pages/college/CollegeProfileSetup';
 import { ManageStudents } from '../pages/college/ManageStudents';
 import { VideoCallPage } from '../pages/VideoCall/VideoCallPage';
+import { ChatPage } from '../pages/chat/ChatPage';
 
 export const AppRoutes = () => {
   return (
@@ -39,6 +40,32 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <VideoCallPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Full-screen chat — rendered outside Layout for immersive experience */}
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat/:roomId"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat/new/:recipientId"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
           </ProtectedRoute>
         }
       />

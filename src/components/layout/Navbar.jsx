@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { User, LogOut, ChevronDown } from 'lucide-react';
+import { User, LogOut, ChevronDown, MessageSquare } from 'lucide-react';
+import { chatService } from '../../api/chat';
 import {
   Navbar as ResizableNavbar,
   NavBody,
@@ -17,7 +18,27 @@ import {
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, isAuthenticated, logout } = useAuth();
+
+  // Fetch unread message count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (isAuthenticated && user && ['patient', 'therapist'].includes(user.role)) {
+        try {
+          const response = await chatService.getUnreadCount();
+          setUnreadCount(response.data.data.totalUnread || 0);
+        } catch (err) {
+          // Silently fail - not critical
+        }
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user]);
 
   const handleLogout = async () => {
     await logout();
@@ -72,6 +93,21 @@ export const Navbar = () => {
                     <User className="w-4 h-4" />
                     Dashboard
                   </Link>
+                  {['patient', 'therapist'].includes(user.role) && (
+                    <Link
+                      to="/chat"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Messages
+                      {unreadCount > 0 && (
+                        <span className="ml-auto bg-[#748DAE] text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                  )}
                   <Link
                     to="/my-feedback"
                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -154,6 +190,21 @@ export const Navbar = () => {
                 <User className="w-4 h-4" />
                 Dashboard
               </Link>
+              {['patient', 'therapist'].includes(user.role) && (
+                <Link
+                  to="/chat"
+                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition font-medium"
+                  onClick={handleMobileNavItemClick}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Messages
+                  {unreadCount > 0 && (
+                    <span className="ml-2 bg-[#748DAE] text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               <Link
                 to="/my-feedback"
                 className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition font-medium"
