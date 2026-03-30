@@ -18,6 +18,7 @@ import {
 import { therapistService } from '../../api/therapist';
 import { sessionService } from '../../api/session';
 import { feedbackService } from '../../api/feedback';
+import { supervisorService } from '../../api/supervisor';
 
 export const TherapistDetailedReport = () => {
   const { therapistId } = useParams();
@@ -42,130 +43,57 @@ export const TherapistDetailedReport = () => {
   const fetchTherapistData = async () => {
     try {
       setLoading(true);
-      
-      console.log('=== FETCHING THERAPIST DATA ===');
-      console.log('Therapist Profile ID from URL:', therapistId);
-      
+
       // Fetch therapist profile
       const therapistResponse = await therapistService.getTherapistById(therapistId);
       const therapistData = therapistResponse.data.data;
-      console.log('Therapist Profile Data:', therapistData);
       setTherapist(therapistData);
 
-      // Get the therapist's userId (the User model ID, not Therapist profile ID)
       const therapistUserId = therapistData.userId?._id || therapistData.userId;
-      console.log('Therapist User ID:', therapistUserId);
 
-      // Fetch all sessions for this therapist using their userId (with high limit)
-      const sessionsResponse = await sessionService.getAllSessions({ limit: 1000 });
-      const allSessions = sessionsResponse.data.data.sessions || [];
-      console.log('All sessions fetched from API:', allSessions.length);
-      console.log('Sample session structure:', allSessions[0]);
-      
-      // Filter sessions for this therapist using userId
-      const therapistSessions = allSessions.filter(session => {
-        const sessionTherapistId = typeof session.therapistId === 'object' 
-          ? session.therapistId._id 
-          : session.therapistId;
-        const matches = sessionTherapistId === therapistUserId;
-        console.log('Comparing session therapist:', sessionTherapistId, 'with target:', therapistUserId, 'matches:', matches);
-        return matches;
+      // Fetch student sessions with feedback
+      const sessionsResponse = await supervisorService.getStudentSessions(therapistUserId, 1, 100);
+      const sessionsWithFeedback = sessionsResponse.data.data.sessions || [];
+
+      setSessions(sessionsWithFeedback);
+
+      // Pre-populate feedback data state from the sessions
+      const initialFeedbackData = {};
+      let totalFeedbacksCount = 0;
+
+      sessionsWithFeedback.forEach(session => {
+        initialFeedbackData[session._id] = {
+          patientToTherapist: session.patientFeedback || null,
+          therapistToPatient: session.therapistFeedback || null,
+          supervisorToTherapist: null 
+        };
+        if (session.patientFeedback) totalFeedbacksCount++;
+        if (session.therapistFeedback) totalFeedbacksCount++;
       });
 
-      console.log('Filtered therapist sessions:', therapistSessions.length);
-      console.log('Sessions:', therapistSessions);
-
-      // Sort by date (most recent first)
-      const sortedSessions = therapistSessions.sort((a, b) => 
-        new Date(b.scheduledAt) - new Date(a.scheduledAt)
-      );
-
-      setSessions(sortedSessions);
+      setFeedbackData(initialFeedbackData);
 
       // Calculate stats
-      const completed = sortedSessions.filter(s => s.status === 'completed').length;
+      const completed = sessionsWithFeedback.filter(s => s.status === 'completed').length;
       setStats({
-        totalSessions: sortedSessions.length,
+        totalSessions: sessionsWithFeedback.length,
         completedSessions: completed,
         averageRating: therapistData.averageRating || 0,
-        totalFeedbacks: 0 // Will be updated when feedback is loaded
+        totalFeedbacks: totalFeedbacksCount
       });
-
-      console.log('=== STATS CALCULATED ===');
-      console.log('Total Sessions:', sortedSessions.length);
-      console.log('Completed:', completed);
-      console.log('Average Rating:', therapistData.averageRating);
 
     } catch (error) {
       console.error('Error fetching therapist data:', error);
-      console.error('Error details:', error.response?.data || error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchFeedbackForSession = async (sessionId) => {
-    if (feedbackData[sessionId]) {
-      return; // Already loaded
-    }
-
-    try {
-      setLoadingFeedback(prev => ({ ...prev, [sessionId]: true }));
-
-      // Get ALL feedback (supervisors can see all therapist-related feedback)
-      // Then filter by sessionId client-side
-      const response = await feedbackService.getAllFeedbacks({
-        page: 1,
-        limit: 100
-      });
-
-      console.log('All feedback response:', response.data);
-
-      const allFeedbacks = response.data.data?.feedbacks || [];
-      
-      // Filter feedback for this specific session
-      const sessionFeedbacks = allFeedbacks.filter(f => {
-        const fSessionId = f.sessionId?._id || f.sessionId;
-        return fSessionId === sessionId;
-      });
-      
-      console.log('Feedbacks for session', sessionId, ':', sessionFeedbacks);
-      
-      // Organize feedback by type
-      const sessionFeedback = {
-        patientToTherapist: sessionFeedbacks.find(f => f.feedbackType === 'patient-to-therapist'),
-        therapistToPatient: sessionFeedbacks.find(f => f.feedbackType === 'therapist-to-patient'),
-        supervisorToTherapist: sessionFeedbacks.find(f => f.feedbackType === 'supervisor-to-therapist')
-      };
-
-      console.log('Organized feedback:', sessionFeedback);
-
-      setFeedbackData(prev => ({
-        ...prev,
-        [sessionId]: sessionFeedback
-      }));
-
-      // Update total feedback count
-      const totalFeedbackCount = sessionFeedbacks.length;
-      setStats(prev => ({
-        ...prev,
-        totalFeedbacks: prev.totalFeedbacks + totalFeedbackCount
-      }));
-
-    } catch (error) {
-      console.error('Error fetching feedback for session:', sessionId, error);
-      console.error('Error details:', error.response?.data || error.message);
-    } finally {
-      setLoadingFeedback(prev => ({ ...prev, [sessionId]: false }));
-    }
-  };
-
-  const toggleSession = async (sessionId) => {
+  const toggleSession = (sessionId) => {
     if (expandedSession === sessionId) {
       setExpandedSession(null);
     } else {
       setExpandedSession(sessionId);
-      await fetchFeedbackForSession(sessionId);
     }
   };
 
@@ -556,3 +484,4 @@ export const TherapistDetailedReport = () => {
     </div>
   );
 };
+

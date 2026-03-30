@@ -25,4 +25,8 @@ export const supervisorService = {
   
   // Remove student from supervision
   removeStudent: (studentId) => api.delete(`/supervisors/students/${studentId}`),
+
+  // Get student's sessions and feedback
+  getStudentSessions: (studentId, page = 1, limit = 10) => 
+    api.get(`/supervisors/students/${studentId}/sessions?page=${page}&limit=${limit}`),
 };
