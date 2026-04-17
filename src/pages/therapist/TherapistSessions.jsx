@@ -216,11 +216,8 @@ export const TherapistSessions = () => {
   const canJoinSession = (session) => {
     if (session.status !== 'confirmed' && session.status !== 'scheduled') return false;
     if (session.meetingLink !== 'carenest-video') return false;
-    const sessionTime = new Date(session.scheduledAt);
-    const now = new Date();
-    const fifteenMinutesBefore = new Date(sessionTime.getTime() - 15 * 60000);
-    const sessionEnd = new Date(sessionTime.getTime() + (session.duration || 60) * 60000);
-    return now >= fifteenMinutesBefore && now <= sessionEnd;
+    // Therapists can join anytime, no time restriction
+    return true;
   };
 
   const filteredSessions = getFilteredSessions();
@@ -437,7 +434,7 @@ export const TherapistSessions = () => {
 
                     {!canJoinSession(session) && (session.status === 'confirmed' || session.status === 'scheduled') && session.meetingLink === 'carenest-video' && (
                       <div className="px-3 py-2 text-xs text-center text-blue-600 bg-blue-50 rounded-lg">
-                        Video call — available 15 min before session
+                        Video call — ready to join
                       </div>
                     )}
 

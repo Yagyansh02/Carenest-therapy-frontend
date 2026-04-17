@@ -106,11 +106,17 @@ export const BookingPage = () => {
         let startHour, endHour;
 
         if (typeof slot === 'string') {
-          // Handle legacy string format "09:00-17:00"
-          const parts = slot.split('-');
-          if (parts.length < 2) return;
-          startHour = parseInt(parts[0]);
-          endHour = parseInt(parts[1]);
+          // Check if it's a range format "09:00-17:00"
+          if (slot.includes('-')) {
+            const parts = slot.split('-');
+            if (parts.length < 2) return;
+            startHour = parseInt(parts[0]);
+            endHour = parseInt(parts[1]);
+          } else {
+            // Handle single time string "09:00" - treat as 1-hour slot
+            startHour = parseInt(slot);
+            endHour = startHour + 1;
+          }
         } else if (slot && typeof slot === 'object' && slot.start && slot.end) {
           // Handle backend object format { start: "09:00", end: "17:00" }
           startHour = parseInt(slot.start);
