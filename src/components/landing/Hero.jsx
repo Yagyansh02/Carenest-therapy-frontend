@@ -14,7 +14,7 @@ export const Hero = () => {
             className="lg:pr-8 mb-12 lg:mb-0"
           >
             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6 text-gray-800" style={{ fontFamily: 'serif' }}>
-              Accessible, Affordable,
+              Accessible,
               <br />
               <span className="italic text-[#748DAE]">Personalized Therapy</span>
             </h1>
