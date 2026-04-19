@@ -25,4 +25,7 @@ export const collegeService = {
 
   // Remove student from college
   removeStudent: (studentId) => api.delete(`/colleges/students/${studentId}`),
+
+  // Create a student profile
+  createStudentProfile: (data) => api.post('/colleges/students/create', data),
 };

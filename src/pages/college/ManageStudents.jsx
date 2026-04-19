@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { therapistService } from '../../api/therapist';
 import { collegeService } from '../../api/college';
@@ -8,6 +9,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, User, Mail, Award, Calendar, Building2, Search, Plus, Trash2 } from 'lucide-react';
 
 export const ManageStudents = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [allTherapists, setAllTherapists] = useState([]);
   const [collegeProfile, setCollegeProfile] = useState(null);
@@ -134,7 +136,7 @@ export const ManageStudents = () => {
         </motion.div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -142,7 +144,7 @@ export const ManageStudents = () => {
             className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
           >
             <p className="text-gray-600 text-sm">Total Student Interns</p>
-            <p className="text-3xl font-bold text-gray-900">{allTherapists.length}</p>
+            <p className="text-3xl font-bold text-gray-900">{affiliatedStudents.length}</p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -150,17 +152,8 @@ export const ManageStudents = () => {
             transition={{ delay: 0.2 }}
             className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
           >
-            <p className="text-gray-600 text-sm">Affiliated with College</p>
-            <p className="text-3xl font-bold text-green-600">{affiliatedStudents.length}</p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
-          >
-            <p className="text-gray-600 text-sm">Unaffiliated Students</p>
-            <p className="text-3xl font-bold text-[#748DAE]">{unaffiliatedStudents.length}</p>
+            <p className="text-gray-600 text-sm">Verified Interns</p>
+            <p className="text-3xl font-bold text-green-600">{affiliatedStudents.filter(t => t.verificationStatus === 'verified').length}</p>
           </motion.div>
         </div>
 
@@ -184,7 +177,8 @@ export const ManageStudents = () => {
               {affiliatedStudents.map((therapist) => (
                 <div
                   key={therapist._id}
-                  className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-shadow"
+                  className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-shadow cursor-pointer hover:border-primary-300"
+                    onClick={() => navigate('/college/student/' + therapist._id)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -199,7 +193,7 @@ export const ManageStudents = () => {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleRemoveStudent(therapist.userId?._id)}
+                        onClick={(e) => { e.stopPropagation(); handleRemoveStudent(therapist.userId?._id); }}
                       disabled={removingId === therapist.userId?._id}
                       className="text-red-500 hover:text-red-700 p-1 disabled:opacity-50"
                       title="Remove from college"
@@ -232,78 +226,10 @@ export const ManageStudents = () => {
             </div>
           )}
         </motion.div>
-
-        {/* Add Students */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Available Student Interns ({filteredUnaffiliated.length})
-          </h2>
-
-          {/* Search */}
-          <div className="mb-4 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#748DAE] focus:border-transparent"
-            />
-          </div>
-
-          {filteredUnaffiliated.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100 text-center">
-              <p className="text-gray-500">No unaffiliated student interns found.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredUnaffiliated.map((therapist) => (
-                <div
-                  key={therapist._id}
-                  className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-[#9ECAD6]/20 p-2 rounded-full">
-                        <User className="h-5 w-5 text-[#748DAE]" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {therapist.userId?.fullName || 'Unknown'}
-                        </p>
-                        <p className="text-sm text-gray-500">{therapist.userId?.email}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleAddStudent(therapist.userId?._id)}
-                      disabled={addingId === therapist.userId?._id}
-                      className="bg-[#748DAE] text-white p-1.5 rounded-lg hover:bg-[#657B9D] disabled:opacity-50 transition-colors"
-                      title="Add to college"
-                    >
-                      {addingId === therapist.userId?._id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {therapist.specializations?.slice(0, 2).map((spec, i) => (
-                      <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                        {spec}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
       </div>
     </div>
   );
 };
+
+
+
