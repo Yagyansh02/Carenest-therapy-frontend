@@ -28,6 +28,8 @@ import { TherapistDetailedReport } from '../pages/supervisor/TherapistDetailedRe
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { CollegeProfileSetup } from '../pages/college/CollegeProfileSetup';
 import { ManageStudents } from '../pages/college/ManageStudents';
+import { StudentProfileView } from '../pages/college/StudentProfileView';
+import { CreateStudentProfile } from '../pages/college/CreateStudentProfile';
 import { VideoCallPage } from '../pages/VideoCall/VideoCallPage';
 import { ChatPage } from '../pages/chat/ChatPage';
 
@@ -241,7 +243,32 @@ export const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/college/student/:id"
+          element={
+            <ProtectedRoute allowedRoles={['college']}>
+              <StudentProfileView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/college/student/:id"
+          element={
+            <ProtectedRoute allowedRoles={['college']}>
+              <StudentProfileView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/college/create-student"
+          element={
+            <ProtectedRoute allowedRoles={['college']}>
+              <CreateStudentProfile />
+            </ProtectedRoute>
+          }
+        />
       </Route>
     </Routes>
   );
 };
+

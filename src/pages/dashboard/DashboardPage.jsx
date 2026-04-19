@@ -800,16 +800,17 @@ const CollegeDashboard = ({ user, navigate }) => {
 
         setCollegeProfile(profile);
         const students = profile.affiliatedStudents || [];
-        setAffiliatedStudents(students);
+        
 
         // Fetch therapist details for affiliated students to get verification info
         const therapistsResponse = await therapistService.getAllTherapists(1, 1000);
         const allTherapists = therapistsResponse.data.data?.therapists || [];
 
         const studentUserIds = students.map(s => s._id?.toString() || s.toString());
-        const studentTherapists = allTherapists.filter(t =>
-          studentUserIds.includes(t.userId?._id?.toString() || t.userId?.toString())
-        );
+                  const studentTherapists = allTherapists.filter(t =>
+            studentUserIds.includes(t.userId?._id?.toString() || t.userId?.toString())
+          );
+          setAffiliatedStudents(studentTherapists);
 
         const verifiedCount = studentTherapists.filter(t => t.verificationStatus === 'verified').length;
         const pendingCount = studentTherapists.filter(t => t.verificationStatus === 'pending').length;
@@ -923,15 +924,15 @@ const CollegeDashboard = ({ user, navigate }) => {
           ) : affiliatedStudents.length > 0 ? (
             <div className="space-y-3">
               {affiliatedStudents.slice(0, 5).map((student) => (
-                <div key={student._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div key={student._id} onClick={() => navigate('/college/student/' + student._id)} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                   <div className="w-10 h-10 bg-[#9ECAD6] rounded-full flex items-center justify-center">
                     <span className="text-white font-medium text-sm">
-                      {student.fullName?.charAt(0) || 'S'}
+                      {student.userId?.fullName?.charAt(0) || 'S'}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{student.fullName || 'Unknown'}</p>
-                    <p className="text-xs text-gray-500">{student.email}</p>
+                    <p className="text-sm font-medium text-gray-900">{student.userId?.fullName || 'Unknown'}</p>
+                    <p className="text-xs text-gray-500">{student.userId?.email}</p>
                   </div>
                 </div>
               ))}
@@ -962,10 +963,10 @@ const CollegeDashboard = ({ user, navigate }) => {
               <p className="font-medium">Manage Students</p>
             </button>
             <button
-              onClick={() => navigate('/college/profile-setup')}
+              onClick={() => navigate('/college/create-student')}
               className="w-full p-4 text-left bg-[#748DAE] hover:bg-[#657B9D] text-white rounded-lg transition-colors"
             >
-              <p className="font-medium">Update College Profile</p>
+              <p className="font-medium">Create Student Profile</p>
             </button>
           </div>
 
@@ -1002,3 +1003,5 @@ const DefaultDashboard = ({ user }) => {
     </motion.div>
   );
 };
+
+
