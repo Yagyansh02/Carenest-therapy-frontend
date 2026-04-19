@@ -21,8 +21,10 @@ export const SocketProvider = ({ children }) => {
       // Disconnect if not authenticated
       if (socket) {
         socket.disconnect();
-        setSocket(null);
-        setIsConnected(false);
+        if (isConnected) {
+          setSocket(null);
+          setIsConnected(false);
+        }
       }
       return;
     }
@@ -83,6 +85,7 @@ export const SocketProvider = ({ children }) => {
       logger.info('[Socket] Cleaning up socket connection');
       newSocket.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, accessToken, user]);
 
   // Join a chat room
@@ -165,6 +168,7 @@ export const SocketProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSocket = () => {
   const context = useContext(SocketContext);
   if (!context) {

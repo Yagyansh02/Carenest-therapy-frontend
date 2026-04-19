@@ -1,11 +1,7 @@
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import React from 'react';
+import { cn } from '../../lib/utils';
 
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
-
-export const Button = ({ className, variant = 'primary', size = 'md', ...props }) => {
+export const Button = React.forwardRef(({ className, variant = 'primary', size = 'md', ...props }, ref) => {
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700',
     secondary: 'bg-secondary-100 text-secondary-900 hover:bg-secondary-200',
@@ -27,7 +23,10 @@ export const Button = ({ className, variant = 'primary', size = 'md', ...props }
         sizes[size],
         className
       )}
+      ref={ref}
       {...props}
     />
   );
-};
+});
+
+Button.displayName = 'Button';

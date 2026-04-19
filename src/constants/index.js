@@ -189,6 +189,7 @@ export const REGEX = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   PHONE: /^\d{10}$/,
   PASSWORD: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
+  // eslint-disable-next-line no-useless-escape
   URL: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
   ALPHANUMERIC: /^[a-zA-Z0-9]+$/,
   LETTERS_ONLY: /^[a-zA-Z\s'-]+$/,

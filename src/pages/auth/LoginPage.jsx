@@ -33,17 +33,19 @@ export const LoginPage = () => {
 
   // Show success message from registration
   useEffect(() => {
-    if (location.state?.message) {
+    if (location.state?.message && successMessage !== location.state.message) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuccessMessage(location.state.message);
-      if (location.state?.email) {
+      if (location.state?.email && loginEmail !== location.state.email) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoginEmail(location.state.email);
       }
     }
     // If coming from register route, show register form
-    if (location.pathname === '/register') {
+    if (location.pathname === '/register' && !isActive) {
       setIsActive(true);
     }
-  }, [location.state, location.pathname]);
+  }, [location.state, location.pathname, successMessage, loginEmail, isActive]);
 
   // Check if user needs to complete assessment after login
   useEffect(() => {

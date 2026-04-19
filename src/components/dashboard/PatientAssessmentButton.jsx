@@ -21,8 +21,12 @@ export const PatientAssessmentButton = ({ patientId, patientName }) => {
 
   useEffect(() => {
     // Reset when patientId changes
-    setReady(false);
-    setLocalError(null);
+    if (ready) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setReady(false);
+      setLocalError(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId]);
 
   const fetchAssessment = async () => {

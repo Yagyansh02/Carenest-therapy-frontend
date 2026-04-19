@@ -42,10 +42,11 @@ export const AssessmentForm = () => {
 
   // Show welcome message if coming from login
   useEffect(() => {
-    if (location.state?.message) {
+    if (location.state?.message && welcomeMessage !== location.state.message) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWelcomeMessage(location.state.message);
     }
-  }, [location.state]);
+  }, [location.state, welcomeMessage]);
 
   // Initialize and check if user already has an assessment
   useEffect(() => {
